@@ -838,6 +838,11 @@ Original Torno drawings, Open for owner review; no runtime assignments.
 | assets/locales/lv.json | Torno contributors | Original Latvian translation of Torno's English catalog; no commercial CAD text used | MIT OR Apache-2.0 |
 | assets/platforms/macos/dmg/background.svg | @danielmigueltejedor | original disk image window background, drawn by tools/dmg-background/draw_background.py in getnodalia/nodalia-design: flat shapes only, text is outlined Sora glyph paths (OFL-1.1); no third-party artwork | MIT OR Apache-2.0 |
 | docs/nodalia/torno-icon.png | Torno contributors; source portrait: Wikimedia Commons | Torno app icon shown at the top of the README, made from the picture in assets/icons/app/shared/source/torno-portrait-512.rgba: portrait of Henry Maudslay over the app colour | MIT OR Apache-2.0; source portrait: public domain |
+| docs/nodalia/torno-dark.png | Torno contributors | Screenshot of Torno in its dark theme with the sample plate open, captured from the app | MIT OR Apache-2.0 |
+| docs/nodalia/torno-light.png | Torno contributors | Screenshot of Torno in its light theme with the sample plate open, captured from the app | MIT OR Apache-2.0 |
+| docs/nodalia/torno-preferences.png | Torno contributors | Screenshot of Torno's Preferences window on the Graphics page, captured from the app | MIT OR Apache-2.0 |
+| crates/look/icons/design/tools/author/import_ndl.py | Torno contributors | original tool that imports the shared Nodalia Design volumetric icons into Torno's masters | MIT OR Apache-2.0 |
+| crates/look/icons/design/tools/author/import_ndl_flat.py | Torno contributors | original tool that redraws Torno's flat interface masters from the Nodalia Design icon set | MIT OR Apache-2.0 |
 
 ## Code adapted from sibling projects
 
