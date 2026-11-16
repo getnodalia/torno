@@ -16,6 +16,13 @@ packaging/linux/arch-package.sh
 .github/workflows/generated.yml
 CONTRIBUTING.md
 .github/CODEOWNERS
+.github/workflows/release-gate.yml
+.github/workflows/release-auto.yml
+.github/workflows/release-notes.yml
+scripts/check-release-notes.sh
+docs/release-notes/**
+docs/releasing.md
+skills/torno-packaging/SKILL.md
 .github/ISSUE_TEMPLATE/**
 .github/pull_request_template.md
 .github/workflows/maintainer-triage.yml

@@ -6,7 +6,7 @@ members = ["crates/*", "apps/*", "xtask"]
 exclude = ["solidcore", "vendor"]
 
 [workspace.package]
-version = "0.40.0-rc.3"
+version = "0.1.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 rust-version = "1.95"
@@ -62,6 +62,10 @@ solidcore-step = { path = "solidcore/crates/solidcore-step" }
 solidcore-tess = { path = "solidcore/crates/solidcore-tess" }
 # test tooling: a dev-dependency only (xtask/src/layers.rs)
 torno-testkit = { path = "crates/testkit" }
+
+# The Nodalia Design Language: its tokens, the egui style built from them and its icons
+# (danielmigueltejedor/nodalia-design, MIT).
+nodalia-theme = { git = "https://github.com/danielmigueltejedor/nodalia-design", rev = "0b23382ffdff442f53a8cfd0b045bc417f1fa5e9", features = ["egui", "engineering"] }
 
 # foundation
 thiserror = "2"

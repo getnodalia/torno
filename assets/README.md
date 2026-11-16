@@ -8,16 +8,14 @@ Keep one editable master per resource and place shipped derivatives in `exports/
 assets/
   icons/
     app/
-      shared/source/                 # original Rust mark and executable ICO encoder
-      macos/source/Torno.icon/   # approved Composer project and linked SVGs
-      macos/exports/                 # paired Assets.car and icon.icns
+      shared/source/                 # app icon picture, its resampler and the executable ICO encoder
+      macos/exports/                 # icon.icns
       windows/exports/               # executable DIB ICO and installer PNG ICO
       linux/exports/hicolor/         # Linux/FreeBSD package images, 16–512 px
     ui/design/svg/                   # authoritative original UI icon masters
     ui/design/tools/                 # authoring bases, checks and included review app
     ui/source/                       # Rust viewport glyphs, markers and navigation
   branding/web/source/og.png          # shared social preview card
-  branding/logo/                     # print/web logo files; guide in branding/README.md
   styles/web/loading.css             # web loading/canvas styles
   appearances/library.rs             # built-in visual presets
   materials/library.rs               # physical defaults and colours
@@ -37,12 +35,9 @@ Read the mandatory [UI style guide](icons/ui/STYLE_GUIDE.md) before editing an i
 Edit SVG geometry and its command/UI assignments together; inspect both themes
 and small sizes. Temporary media and generated reports belong in ignored target/. Palettes and model presets are also editable Rust data.
 
-The current macOS master is `icons/app/macos/source/Torno.icon/`, including
-its linked SVG layers and appearance settings. The earlier Pluma document
-is preserved in the archive. No other native design projects were available for
-the current UI set or preview card. Keep any future `.vectorcraft`, `.ai` or other
-native work and linked inputs under that resource's `source/work/`, with an
-attribution row; retain the editable document alongside its exports.
+The app icon is the portrait in `icons/app/shared/source/` (`app_icon.rs` resamples it). Keep any
+native design work and linked inputs under that resource's `source/work/`, with an attribution
+row; retain the editable document alongside its exports.
 
 Regenerate all exports of the shared Windows/Linux/FreeBSD mark together:
 
@@ -50,18 +45,8 @@ Regenerate all exports of the shared Windows/Linux/FreeBSD mark together:
 cargo xtask app-icons
 ```
 
-For macOS, use Xcode with Icon Composer support:
-
-```sh
-mkdir -p target/resources/macos-icon
-xcrun actool assets/icons/app/macos/source/Torno.icon \
-  --compile target/resources/macos-icon --platform macosx \
-  --minimum-deployment-target 11.0 --app-icon Torno \
-  --output-partial-info-plist target/resources/macos-icon/icon-info.plist \
-  --output-format human-readable-text
-cp target/resources/macos-icon/Assets.car assets/icons/app/macos/exports/Assets.car
-cp target/resources/macos-icon/Torno.icns assets/icons/app/macos/exports/icon.icns
-```
+macOS uses `icons/app/macos/exports/icon.icns`, made from the same portrait. There is no Icon
+Composer project, so the bundle carries no `Assets.car`.
 
 Review and commit source changes and required exports together. Temporary renders,
 tool caches and package staging belong under ignored `target/` or `dist/`.
@@ -72,7 +57,7 @@ The CLI still supports arbitrary PNG/ICO exports with `torno-cli icon`.
 
 | Platform | Resources and output paths |
 | --- | --- |
-| macOS | Composer master and paired exports; bundle installs `Assets.car` and `Torno.icns` |
+| macOS | `icon.icns`, installed in the bundle as `Torno.icns` |
 | Windows executable | `torno-executable.ico`: original DIB/mask representations at 16/24/32/48/64/128/256 px |
 | Windows installer | `torno.ico`: PNG representations at 16/20/24/32/40/48/64/128/256 px; `TORNO_ICONS` override retained |
 | Linux, Nix, deb/rpm, tar, Flatpak, Snap | Copy canonical hicolor images; icon name stays `dev.danielmiguelt.Torno` |
