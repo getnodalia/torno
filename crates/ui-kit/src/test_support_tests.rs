@@ -6,10 +6,12 @@ use std::collections::HashMap;
 use torno_theme::Tokens;
 use torno_ui_registry as registry;
 
-/// The kit's own English test catalog: the messages its tests read, with the same English a host
-/// gives them. Catalogs are host data; the kit's tests never rely on Torno's.
+/// The kit's own test catalogs: the messages its tests read, with the same English a host
+/// gives them, plus the German the first-letter test needs. Catalogs are host data; the kit's
+/// tests never rely on Torno's.
 static ENGLISH: torno_ui_text::Catalog = torno_ui_text::Catalog::new("en", "English", include_str!("test_support/catalog.json"));
-static CATALOGS: [&torno_ui_text::Catalog; 1] = [&ENGLISH];
+static GERMAN: torno_ui_text::Catalog = torno_ui_text::Catalog::new("de", "Deutsch", include_str!("test_support/catalog.de.json"));
+static CATALOGS: [&torno_ui_text::Catalog; 2] = [&ENGLISH, &GERMAN];
 
 /// Install the kit's test catalog (once per process) and read the system language as English.
 pub fn install_catalog() {

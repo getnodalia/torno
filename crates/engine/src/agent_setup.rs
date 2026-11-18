@@ -236,7 +236,7 @@ enum Verdict {
 fn is_torno_cli(command: &str) -> bool {
     let name = command.rsplit(['/', '\\']).next().unwrap_or(command).to_ascii_lowercase();
     let stem = name.strip_suffix(".exe").unwrap_or(&name);
-    stem == "torno-cli" || stem == "solvecraft-cli"
+    stem == "torno-cli"
 }
 
 /// The command and arguments of an entry, whether it spells them as `command` + `args` or as

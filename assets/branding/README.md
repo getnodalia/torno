@@ -74,6 +74,6 @@ The wordmark is set in IBM Plex Sans Bold (SIL Open Font License 1.1, the interf
 
 ## Licence
 
-The Torno name, logo and brand kit are under the Torno Brand and Interface Licence
+The Torno name, logo and brand kit are under the SolidCraft Brand and Interface Licence
 ([LICENSE-BRAND](../../LICENSE-BRAND)). Using them for anything other than Torno needs the
 maintainers' written permission first.

@@ -249,7 +249,11 @@ fn windows_installer_is_followed_by_the_new_version() {
 fn an_updated_appimage_takes_the_release_file_name() {
     let new = |p: &str| release_named(Path::new(p), "v0.17.0", "x86_64");
     assert_eq!(new("/a/torno-0.16.2-linux-x86_64.AppImage"), Path::new("/a/torno-0.17.0-linux-x86_64.AppImage"));
-    assert_eq!(new("/a/solvecraft-0.9.0-linux-x86_64.AppImage"), Path::new("/a/torno-0.17.0-linux-x86_64.AppImage"));
+    assert_eq!(
+        new("/a/solvecraft-0.9.0-linux-x86_64.AppImage"),
+        Path::new("/a/solvecraft-0.9.0-linux-x86_64.AppImage"),
+        "not a release name of ours"
+    );
     assert_eq!(new("/a/Torno.AppImage"), Path::new("/a/Torno.AppImage"), "a name the user chose");
     assert_eq!(new("/a/torno-linux-x86_64.AppImage"), Path::new("/a/torno-linux-x86_64.AppImage"), "no version in it");
     assert_eq!(new("/a/torno-0.16.2-linux-x86_64.AppImage.bak"), Path::new("/a/torno-0.16.2-linux-x86_64.AppImage.bak"));
