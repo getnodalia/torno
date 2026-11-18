@@ -1,4 +1,9 @@
 {
+  "ar": {
+    "Geometry": "الهندسة",
+    "Objects": "الكائنات",
+    "default": "افتراضي"
+  },
   "en": {
     "Geometry": "Geometry",
     "Objects": "Objects",
@@ -109,5 +114,25 @@
     "Geometry": "Geometría",
     "Objects": "Objetos",
     "default": "predeterminado"
+  },
+  "he": {
+    "Geometry": "גאומטריה",
+    "Objects": "אובייקטים",
+    "default": "ברירת מחדל"
+  },
+  "ja": {
+    "Geometry": "ジオメトリ",
+    "Objects": "オブジェクト",
+    "default": "既定"
+  },
+  "vi": {
+    "Geometry": "Hình học",
+    "Objects": "Các đối tượng",
+    "default": "mặc định"
+  },
+  "zh": {
+    "Geometry": "几何体",
+    "Objects": "对象",
+    "default": "默认"
   }
 }
