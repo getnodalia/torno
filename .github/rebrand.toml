@@ -16,7 +16,7 @@ keep = [
     # Upstream's earlier home: links to its issues and pull requests.
     "(https?://)?github\\.com/bherbruck/solidcraft/(issues|pull|commit|blob|tree)/[^\\s)\\]\"'<>`]*",
     # Other people's repositories and forks.
-    "https?://(github\\.com|raw\\.githubusercontent\\.com)/(?!tangency-labs|bherbruck|getnodalia|danielmigueltejedor)[^\\s)\\]\"'<>`]*",
+    "https?://(?!github\\.com/storytold/(craft-libs|egui|winit|winprint\\.rs|indd-utils)(\\.git)?\")(github\\.com|raw\\.githubusercontent\\.com)/(?!tangency-labs|bherbruck|getnodalia|danielmigueltejedor)[^\\s)\\]\"'<>`]*",
     # App ids of releases long before Torno, read by the migration shims (docs/compatibility.md).
     "ai\\.storyteller\\.(solidcraft|solvecraft)[\\w.-]*",
     # The `.solidcraft` design extension: files saved under it still open, and the test corpus
@@ -62,6 +62,52 @@ file = "Cargo.toml"
 pattern = '^version = "[^"]*"'
 
 # Identity: app id, publisher, web addresses, installer GUIDs (a product of its own).
+# Cargo sources: the shared libraries come from getnodalia/foundation, which vendors them at the
+# same commits (standards/shared-libraries.md there). Before the broader link rules below.
+[[replace]]
+from = 'git = "https://github.com/storytold/craft-libs.git"'
+to = 'git = "https://github.com/getnodalia/foundation"'
+
+[[replace]]
+from = 'git = "https://github.com/storytold/craft-libs"'
+to = 'git = "https://github.com/getnodalia/foundation"'
+
+[[replace]]
+from = 'git = "https://github.com/storytold/egui.git"'
+to = 'git = "https://github.com/getnodalia/foundation"'
+
+[[replace]]
+from = 'git = "https://github.com/storytold/egui"'
+to = 'git = "https://github.com/getnodalia/foundation"'
+
+[[replace]]
+from = 'git = "https://github.com/storytold/winit.git"'
+to = 'git = "https://github.com/getnodalia/foundation"'
+
+[[replace]]
+from = 'git = "https://github.com/storytold/winit"'
+to = 'git = "https://github.com/getnodalia/foundation"'
+
+[[replace]]
+from = 'git = "https://github.com/storytold/winprint.rs.git"'
+to = 'git = "https://github.com/getnodalia/foundation"'
+
+[[replace]]
+from = 'git = "https://github.com/storytold/winprint.rs"'
+to = 'git = "https://github.com/getnodalia/foundation"'
+
+[[replace]]
+from = 'git = "https://github.com/storytold/indd-utils.git"'
+to = 'git = "https://github.com/getnodalia/foundation"'
+
+[[replace]]
+from = 'git = "https://github.com/storytold/indd-utils"'
+to = 'git = "https://github.com/getnodalia/foundation"'
+
+[[replace]]
+from = '"https://github.com/storytold/craft-libs"'
+to = '"https://github.com/getnodalia/foundation"'
+
 [[replace]]
 from = "io.tangencylabs.solidcraft"
 to = "dev.danielmiguelt.Torno"

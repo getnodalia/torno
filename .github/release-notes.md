@@ -6,11 +6,10 @@ parameter to watch the timeline rebuild. [Documentation](https://getnodalia.gith
 `torno-cli mcp` ([how](https://getnodalia.github.io/torno/guide/mcp.html)).
 
 **What's new** in Torno {version} is listed below, and the
-[ROADMAP](https://github.com/bherbruck/solidcraft/blob/main/ROADMAP.md#known-limitations) lists
+[roadmap detail](https://github.com/bherbruck/solidcraft/blob/main/docs/roadmap-detail.md#known-limitations) lists
 the known limitations. Designs from every earlier version open in this one.
 
-**New app ID.** The app ID is now `dev.danielmiguelt.Torno` (it was `ai.storyteller.solidcraft`,
-and `ai.storyteller.solvecraft` up to 0.7): `flatpak update` offers to replace the old app, the
+**New app ID.** The app ID is now `dev.danielmiguelt.Torno` (it was `ai.storyteller.solidcraft`): `flatpak update` offers to replace the old app, the
 `.deb`, `.rpm` and AppImage remove the old menu entry, and settings stay. On macOS the bundle ID
 changed too, so macOS asks once more for the permissions it had granted.
 
@@ -25,7 +24,8 @@ Documentation, the browser app and the Flatpak feed use the Torno project Pages 
 
 **Which file?**
 - **Windows:** `Torno-{version}-windows-x64.exe` runs as is. Or install the `.msi`, or unzip the
-  `-portable.zip` (x64, x86 and arm64).
+  `-portable.zip` (x64, x86 and arm64). IT admins: `torno-{version}-windows-policy-templates.zip`
+  holds the Intune and Group Policy templates ([Managing Torno in an organization](https://github.com/tangency-labs/solidcraft/blob/main/docs/book/src/guide/managed-deployment.md)).
 - **macOS 11+** (Apple silicon and Intel): open the `.dmg` and drag `Torno.app` onto Applications.
   The CLI is in `torno-cli-{version}-macos-universal.zip`.
 - **Linux** (x86_64 and aarch64, glibc 2.35+): the `.AppImage` (`chmod +x`, then run it), the
@@ -51,8 +51,7 @@ A remote added from the old `bherbruck.github.io` address no longer finds update
 `flatpak remote-modify --user --url=https://getnodalia.github.io/torno/flatpak/repo/ torno`, then
 `flatpak update --user`.
 
-Flatpak installs under an old ID (`ai.storyteller.solidcraft`, or `ai.storyteller.solvecraft` from 0.7 or
-earlier): `flatpak update --user` offers to replace it with `dev.danielmiguelt.Torno`, and settings move along.
+Flatpak installs under the old ID `ai.storyteller.solidcraft`: `flatpak update --user` offers to replace it with `dev.danielmiguelt.Torno`, and settings move along.
 
 Single-file `.flatpak` bundles include the runtime repository address; missing runtimes
 still need an internet connection. [Linux installation details](https://getnodalia.github.io/torno/guide/getting-started.html#linux-flatpak).

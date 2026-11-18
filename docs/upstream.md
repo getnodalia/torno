@@ -3,9 +3,9 @@
 | Field | Value |
 |---|---|
 | Upstream | `tangency-labs/solidcraft` |
-| Last observed | `87400c80ef817acde59ad5984b9ccd6209fcca96` |
-| Last evaluated | `87400c80ef817acde59ad5984b9ccd6209fcca96` |
-| Last integrated | `87400c80ef817acde59ad5984b9ccd6209fcca96` imported with full history on 2026-11-10 |
+| Last observed | `84418862b0c0f5432f83216fd26f6dda96d87dd5` |
+| Last evaluated | `84418862b0c0f5432f83216fd26f6dda96d87dd5` |
+| Last integrated | `84418862b0c0f5432f83216fd26f6dda96d87dd5` (6249 commits since the last sync) on 2026-11-18 |
 | Skipped | none in the baseline import |
 | Adapted | app icon: `assets/icons/app/shared/source/app_icon.rs` resamples a portrait instead of drawing upstream's mark; every SolidCraft name renamed to Torno (`.github/rebrand.toml`) |
 | Conflicting | none recorded |
@@ -23,12 +23,14 @@ upstream's issues, the `.solidcraft` design extension and file format tags; file
 marked `rebrand: keep` is left alone, for compatibility code that has to name the old product
 (docs/compatibility.md).
 
-The branch `upstream-torno` mirrors upstream with Torno's names. Each of its commits holds the
-rebranded tree of one upstream commit, has the previous mirror commit and that upstream commit as
-parents, and names it in an `Upstream-Commit:` trailer. The weekly sync
-(`.github/workflows/upstream-sync.yml`) adds a mirror commit for upstream's new head and merges
-that, so upstream's changes arrive already speaking Torno, and a conflict is a real one. Files in
-`.github/upstream-keep` keep Torno's version.
+Each sync records upstream's head as one mirror commit: it holds the rebranded tree of that
+upstream commit, its only parent is the previous mirror commit, its subject is
+`Upstream <sha> with this app's names`, and an `Upstream-Commit:` trailer names the upstream commit
+it renames. The weekly sync (`.github/workflows/upstream-sync.yml`) merges that commit into a branch
+and opens a pull request, so upstream's changes arrive already speaking Torno, and a conflict is a
+real one. Files in `.github/upstream-keep` keep Torno's version. No mirror branch is pushed, so merge
+sync pull requests with a merge commit: a squash would drop the mirror commit the next sync starts
+from.
 
 The first mirror commit is upstream `87400c80` renamed; it was merged with `-s ours` when the
 whole repository was renamed, so only later upstream changes come through it.

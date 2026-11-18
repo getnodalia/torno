@@ -276,7 +276,7 @@ pub fn run(
 }
 
 /// Where an AppImage called `path` goes once it holds `version`: if its name is a release name
-/// (`torno-<version>-linux-<arch>.AppImage`, or the old `solvecraft-` one), the new release's name
+/// (`torno-<version>-linux-<arch>.AppImage`), the new release's name
 /// in the same folder; any other name (renamed by the user, or without a version) is kept.
 pub fn release_named(path: &Path, version: &str, arch: &str) -> PathBuf {
     let name = path.file_name().map(|n| n.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();

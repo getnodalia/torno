@@ -140,6 +140,8 @@ mod tests {
         assert!(home.center().x < 80.0, "Home follows the icon, at {}", home.center().x);
     }
 
+    /// Report a bug and the link pills are not in this list: they are flat brand-coloured capsules
+    /// whose hover is a slightly lighter fill of their own colour, not the bar's translucent chrome.
     #[test]
     fn every_bar_control_uses_translucent_hover_chrome() {
         let previous = torno_theme::is_dark();
@@ -161,7 +163,6 @@ mod tests {
                 "titlebar:assistant",
                 "titlebar:preferences",
                 "appbar:help",
-                "titlebar:report",
             ]
             .into_iter()
             .map(|name| crate::scenario::rect_of(name).unwrap_or_else(|| panic!("{name}")))
@@ -219,7 +220,18 @@ mod tests {
             }
         }
     }
-
+    #[test]
+    fn the_title_bar_shows_no_community_pills() {
+        for width in [700.0, 1280.0, 1600.0] {
+            let mut w = Win::new(width);
+            w.app.home.open = false;
+            w.frame(vec![]);
+            w.frame(vec![]);
+            for name in ["titlebar:kofi", "titlebar:discord"] {
+                assert!(crate::scenario::rect_of(name).is_none(), "{width}: {name}");
+            }
+        }
+    }
     #[test]
     fn no_caption_buttons_without_a_custom_title_bar() {
         let mut w = Win::new(1200.0);

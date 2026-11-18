@@ -4,6 +4,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use serde_json::Value;
 use torno_doc::{Document, Feature, FeatureKind, Mat, PlaneRef};
+use torno_geom::prelude::*;
 
 use crate::params::{bad, vec3};
 use crate::schema::timeline_clipboard::{PasteResult, Pasted};
@@ -74,7 +75,7 @@ fn parameters(target: &mut Document, source: &Document, features: &[Feature], ma
     let mut texts = BTreeSet::new();
     for feature in features {
         if let FeatureKind::Sketch { sketch, .. } = &feature.kind {
-            pending.extend(sketch.constraints.iter().filter_map(|c| c.param.clone()));
+            pending.extend(sketch.dimension_params().into_iter().cloned());
             let text_and_points = sketch
                 .links
                 .iter()
@@ -83,7 +84,9 @@ fn parameters(target: &mut Document, source: &Document, features: &[Feature], ma
                     _ => None,
                 })
                 .flatten()
-                .chain(sketch.points.iter().filter_map(|p| p.exprs.as_deref()).flat_map(torno_sketch::PointExprs::list));
+                .chain(sketch.points.iter().filter_map(|p| p.exprs.as_deref()).flat_map(torno_sketch::PointExprs::list))
+                // 3D points placed by expressions (#10608).
+                .chain(sketch.wire_point_exprs());
             pending.extend(text_and_points.flat_map(|(_, e)| torno_doc::expr::references(e)));
             for equation in &sketch.equations {
                 pending.extend(equation.list().into_iter().flat_map(|(_, e)| torno_doc::expr::references(e)).filter(|n| n != equation.variable()));
@@ -268,12 +271,120 @@ pub(super) fn paste(s: &mut Session, p: &Value) -> Result<Value> {
                 }
             }
         }
-        feature.remap_clone(&ids, &names, &BTreeMap::new(), &mapped)?;
+        if let FeatureKind::Sketch { plane, sketch } = &mut feature.kind {
+            let source = |id| transforms.get(&id).copied().unwrap_or(torno_doc::IDENTITY);
+            torno_doc::project::reframe_link_sketch_placements(sketch, transform, source)?;
+            torno_doc::reframe_plane_placements(plane, transform, source)?;
+        }
+        feature.remap_clone(&ids, &names, &BTreeMap::new(), &mapped, &BTreeMap::new(), &copy.doc)?;
         if let FeatureKind::Sketch { plane, sketch } = &mut feature.kind {
             // 3D wires carry their own coordinate space, independently of the sketch plane.
             for wire in &mut sketch.wires {
                 let matrix = if wire.space == torno_sketch::WireSpace::Component { transform } else { &world_shift };
                 torno_doc::map_wire(wire, matrix);
+            }
+            // Their 3D constraints go with them (#10608): a fixed point where its curve now is,
+            // an axis the one the copy now runs along. One whose axis the paste turns away from
+            // every axis goes, and a point placed by expressions that the paste moves keeps
+            // where it lands, not its expressions (they would put it back).
+            let component: std::collections::HashSet<String> =
+                sketch.wires.iter().filter(|w| w.space == torno_sketch::WireSpace::Component).map(|w| w.id.clone()).collect();
+            let matrix = |wire: &str| if component.contains(wire) { transform } else { &world_shift };
+            // Distances from a plane the paste shifts along its normal: their parameter's new
+            // expression, and On Plane constraints turned into such distances, which need one.
+            let mut shifted: Vec<(String, String)> = Vec::new();
+            let mut to_param: Vec<(String, String)> = Vec::new();
+            sketch.wire_constraints.retain_mut(|c| match &mut c.kind {
+                torno_sketch::WireConstraintKind::Fix { p, at, exprs } => {
+                    let m = matrix(&p.wire);
+                    *at = torno_doc::apply_point(m, *at);
+                    if !torno_doc::is_identity(m) {
+                        *exprs = None;
+                    }
+                    true
+                }
+                torno_sketch::WireConstraintKind::AlongAxis { line, axis } => {
+                    match torno_sketch::Axis::along(torno_doc::apply_vector(matrix(line), axis.unit())) {
+                        Some(a) => {
+                            *axis = a;
+                            true
+                        }
+                        None => false,
+                    }
+                }
+                // A distance along an axis: along the axis it now runs on, from the side it did.
+                torno_sketch::WireConstraintKind::AxisDistance { a, axis, reversed, .. } => {
+                    let d = torno_doc::apply_vector(matrix(&a.wire), axis.unit());
+                    match torno_sketch::Axis::along(d) {
+                        Some(to) => {
+                            *reversed ^= d.dot(to.unit()) < 0.0;
+                            *axis = to;
+                            true
+                        }
+                        None => false,
+                    }
+                }
+                // To an origin plane: the plane the paste turns it onto, the side it was on, and
+                // the paste's shift along it (a point on the plane is then that far from it).
+                // One the paste turns onto no origin plane goes.
+                torno_sketch::WireConstraintKind::ParallelToPlane { line, plane } => match onto_plane(matrix(line), *plane) {
+                    Some((to, _, _)) => {
+                        *plane = to;
+                        true
+                    }
+                    None => false,
+                },
+                torno_sketch::WireConstraintKind::PlaneAngle { line, plane, reversed, .. } => match onto_plane(matrix(line), *plane) {
+                    Some((to, flip, _)) => {
+                        *plane = to;
+                        *reversed ^= flip;
+                        true
+                    }
+                    None => false,
+                },
+                torno_sketch::WireConstraintKind::PlaneDistance { p, plane, reversed, value } => match onto_plane(matrix(&p.wire), *plane) {
+                    // Turned only: the value (and the parameter that drives it) stays, the side turns.
+                    Some((to, flip, shift)) if shift.abs() <= 1e-9 => {
+                        (*plane, *reversed) = (to, *reversed ^ flip);
+                        true
+                    }
+                    // Shifted: the signed distance along the new normal is the shift and the old
+                    // distance, on its side; the parameter says so, so a solve keeps it.
+                    Some((to, flip, shift)) => {
+                        let side = if *reversed != flip { -1.0 } else { 1.0 };
+                        let w = shift + side * *value;
+                        (*plane, *reversed, *value) = (to, false, w);
+                        if let Some(name) = &c.param {
+                            shifted.push((name.clone(), format!("{} mm {} ({{old}})", shift, if side < 0.0 { "-" } else { "+" })));
+                        }
+                        true
+                    }
+                    None => false,
+                },
+                torno_sketch::WireConstraintKind::OnPlane { p, plane } => match onto_plane(matrix(&p.wire), *plane) {
+                    Some((to, _, shift)) if shift.abs() <= 1e-9 => {
+                        *plane = to;
+                        true
+                    }
+                    Some((to, _, shift)) => {
+                        c.kind = torno_sketch::WireConstraintKind::PlaneDistance { p: p.clone(), plane: to, reversed: false, value: shift };
+                        to_param.push((c.id.clone(), format!("{shift} mm")));
+                        true
+                    }
+                    None => false,
+                },
+                _ => true,
+            });
+            for (name, expr) in shifted {
+                if let Some(param) = scratch.doc_mut().params.iter_mut().find(|p| p.name == name) {
+                    param.expr = expr.replace("{old}", &param.expr);
+                }
+            }
+            for (id, expr) in to_param {
+                let name = scratch.doc_mut().new_model_param(&expr, "mm");
+                if let Some(c) = sketch.wire_constraints.iter_mut().find(|c| c.id == id) {
+                    c.param = Some(name);
+                }
             }
             // Patterns and text words have expressions outside FeatureKind's numeric inputs.
             for pattern in &mut sketch.patterns {
@@ -305,4 +416,20 @@ pub(super) fn paste(s: &mut Session, p: &Value) -> Result<Value> {
     s.accept_computed(scratch);
     serde_json::to_value(PasteResult { pasted: made, errors: Vec::new(), notices: Vec::new(), param_warnings: Vec::new() })
         .map_err(|e| bad(CMD, e.to_string()))
+}
+
+/// The origin plane `matrix` turns `plane` onto, whether it turns the normal round (the plane's
+/// back side to its front), and how far the matrix shifts points along the new normal; `None`
+/// when it turns it onto no origin plane.
+fn onto_plane(matrix: &torno_doc::Mat, plane: torno_sketch::OriginPlane) -> Option<(torno_sketch::OriginPlane, bool, f64)> {
+    use torno_sketch::{Axis, OriginPlane};
+    let n = torno_doc::apply_vector(matrix, plane.normal());
+    let axis = Axis::along(n)?;
+    let to = match axis {
+        Axis::X => OriginPlane::Yz,
+        Axis::Y => OriginPlane::Xz,
+        Axis::Z => OriginPlane::Xy,
+    };
+    let shift = torno_doc::apply_point(matrix, solidcore_record::Vec3::ZERO).dot(to.normal());
+    Some((to, n.dot(to.normal()) < 0.0, shift))
 }

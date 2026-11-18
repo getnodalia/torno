@@ -37,6 +37,15 @@ constrain, extrude and revolve, and every step stays editable on a timeline. It 
 written in Rust, with no account and no cloud, and it wears Nodalia Design: rounded islands, the
 suite's line icons with Torno's gold, and the suite's own window controls on Linux.
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/getnodalia/nodalia-web/main/assets/screens/torno/torno-dark.jpg" width="900" alt="Torno in the dark theme with a sample plate open: the design tree, the ribbon and the timeline">
+</p>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/getnodalia/nodalia-web/main/assets/screens/torno/torno-light.jpg" width="440" alt="The same plate in the light theme">
+  <img src="https://raw.githubusercontent.com/getnodalia/nodalia-web/main/assets/screens/torno/torno-home-dark.jpg" width="440" alt="Torno's start screen, with the examples">
+</p>
+
 > [!IMPORTANT]
 > **Torno is at an early stage.** There are no published builds yet. Expect rough edges, and keep a
 > copy of designs that matter.
@@ -45,7 +54,7 @@ suite's line icons with Torno's gold, and the suite's own window controls on Lin
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/nodalia/torno-light.png" alt="Torno in its light theme with the sample plate open"></td>
+    <td width="50%"><img src="https://raw.githubusercontent.com/getnodalia/nodalia-web/main/assets/screens/torno/torno-light.jpg" alt="Torno in its light theme with the sample plate open"></td>
     <td width="50%"><img src="docs/nodalia/torno-preferences.png" alt="Torno's Preferences window on the Graphics page, with the presets and the curved surface quality"></td>
   </tr>
   <tr>
