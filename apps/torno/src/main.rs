@@ -46,6 +46,7 @@ mod single_instance;
 #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
 mod space_mouse;
 mod startup;
+mod update_http;
 #[cfg(any(target_os = "windows", test))]
 mod window_fit;
 
@@ -902,38 +903,25 @@ fn services(cc: &eframe::CreationContext<'_>, folder: &DialogFolder) -> Services
 
 /// HTTPS GET for the update check (docs/updates.md): certificates from the operating system, a
 /// 15 s limit, at most 1 MB, and no headers beyond what GitHub requires (a User-Agent without
-/// the version or anything about this machine, and the API's media type).
+/// the version or anything about this machine, and the API's media type). When GitHub refuses
+/// the check for its rate limit, the release page still says which version is newest.
 fn http_get(url: &str) -> Result<Vec<u8>, torno_ui_egui::update::FetchError> {
     use torno_ui_egui::update::FetchError;
-    let mut response = http_call(url, std::time::Duration::from_secs(15))?;
-    response.body_mut().with_config().limit(1 << 20).read_to_vec().map_err(|e| FetchError::Failed(e.to_string()))
+    let answer = http_call(url, std::time::Duration::from_secs(15))
+        .and_then(|mut response| response.body_mut().with_config().limit(1 << 20).read_to_vec().map_err(|e| FetchError::Failed(e.to_string())));
+    match answer {
+        Err(error) if url == torno_ui_egui::update::LATEST_API && update_http::is_refusal(&error) => {
+            update_http::latest_from_release_page().ok_or(error)
+        }
+        other => other,
+    }
 }
 
 /// HTTPS download of an update package to `to` (docs/updates.md), reporting progress; stops when
-/// `progress` returns false. The caller verifies the file.
+/// `progress` returns false. A connection that drops or stalls resumes where it stopped. The
+/// caller verifies the file.
 fn http_download(url: &str, to: &std::path::Path, progress: &dyn Fn(u64, Option<u64>) -> bool) -> Result<(), torno_ui_egui::update::FetchError> {
-    use std::io::{Read, Write};
-    use torno_ui_egui::update::FetchError;
-    let fail = |e: String| FetchError::Failed(e);
-    let mut response = http_call(url, std::time::Duration::from_secs(30 * 60))?;
-    let total = response.headers().get("content-length").and_then(|v| v.to_str().ok()).and_then(|v| v.parse::<u64>().ok());
-    let mut body = response.body_mut().with_config().limit(torno_ui_egui::update::install::MAX_PACKAGE).reader();
-    let mut file = std::fs::File::create(to).map_err(|e| fail(format!("{}: {e}", to.display())))?;
-    let mut buf = vec![0u8; 1 << 16];
-    let mut done = 0u64;
-    loop {
-        let n = body.read(&mut buf).map_err(|e| fail(e.to_string()))?;
-        if n == 0 {
-            break;
-        }
-        file.write_all(buf.get(..n).unwrap_or_default()).map_err(|e| fail(format!("{}: {e}", to.display())))?;
-        done += n as u64;
-        if !progress(done, total) {
-            return Err(fail("cancelled".into()));
-        }
-    }
-    file.sync_all().map_err(|e| fail(format!("{}: {e}", to.display())))?;
-    Ok(())
+    update_http::download(url, to, progress)
 }
 
 /// HTTP for the agent chat's API agents (OpenAI-compatible endpoints, docs/agent-chat.md): to the
