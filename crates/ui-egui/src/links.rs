@@ -81,24 +81,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn each_link_opens_its_own_page_and_only_that() {
-        crate::i18n::install();
+    fn torno_ships_no_community_links() {
+        assert!(LINKS.is_empty());
         let ctx = egui::Context::default();
-        let urls: Vec<_> = LINKS.iter().map(|l| l.url).collect();
-        assert_eq!(urls, ["https://ko-fi.com/bherbruck", "https://discord.gg/FtU4NQNVDH"]);
-        for link in LINKS {
-            ctx.begin_pass(egui::RawInput::default());
-            assert!(run(&ctx, link.id), "{}", link.id);
-            let mut out = ctx.end_pass();
-            out.textures_delta.clear();
-            let opened = out.platform_output.commands.iter().find_map(|c| match c {
-                egui::OutputCommand::OpenUrl(u) => Some(u.url.clone()),
-                _ => None,
-            });
-            assert_eq!(opened.as_deref(), Some(link.url), "{}", link.id);
-        }
         ctx.begin_pass(egui::RawInput::default());
-        assert!(!run(&ctx, "nothing"));
+        assert!(!run(&ctx, "kofi"));
+        assert!(!run(&ctx, "discord"));
         let mut out = ctx.end_pass();
         out.textures_delta.clear();
         assert!(out.platform_output.commands.iter().all(|c| !matches!(c, egui::OutputCommand::OpenUrl(_))));
@@ -116,14 +104,8 @@ mod tests {
     }
 
     #[test]
-    fn both_buttons_are_on_by_default_and_the_switches_hide_only_their_own() {
-        let mut app = SolveApp::new(Default::default(), Default::default());
-        assert_eq!(title_bar(&app).map(|l| l.id).collect::<Vec<_>>(), ["kofi", "discord"]);
-        (LINKS[0].hide)(&mut app.preferences);
-        assert_eq!(title_bar(&app).map(|l| l.id).collect::<Vec<_>>(), ["discord"]);
-        (LINKS[1].hide)(&mut app.preferences);
+    fn the_title_bar_shows_no_pills() {
+        let app = SolveApp::new(Default::default(), Default::default());
         assert_eq!(title_bar(&app).count(), 0);
-        // The links themselves stay: the Help menu, About and the start page list all of LINKS.
-        assert_eq!(LINKS.len(), 2);
     }
 }
