@@ -24,11 +24,11 @@
   const MAX_FORMAT_SCAN_BYTES = 64 * 1024 * 1024;
   const MAX_SETTING_CHARS = 8 * 1024 * 1024;
   /** apps/torno-web/src/files.rs: the stable channel's names, newest first. */
-  const LOCAL_PREFIXES = ["torno.file.", "solvecraft.file."];
-  const RECOVERY = ["recovery.sc", "recovery.solidcraft", "recovery.solvecraft"];
+  const LOCAL_PREFIXES = ["torno.file."];
+  const RECOVERY = ["recovery.sc", "recovery.solidcraft"];
   const RECOVERY_META = "recovery.json";
   /** Everything else in this site's local storage belongs to the documentation. */
-  const SETTINGS = ["torno.prefs", "solvecraft.prefs", "torno.webgl", "egui_memory_ron"];
+  const SETTINGS = ["torno.prefs", "torno.webgl", "egui_memory_ron"];
 
   const storage = () => {
     try {

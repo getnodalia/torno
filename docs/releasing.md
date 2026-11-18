@@ -309,11 +309,11 @@ that every file came back signed. Without the secret (forks) the jobs build unsi
 - **Policy:** `test-signing` (a self-signed test certificate) unless the dispatch input
   `signpath_signing_policy` or the repository variable `SIGNPATH_SIGNING_POLICY` says otherwise.
   Switch to the real certificate with `gh variable set SIGNPATH_SIGNING_POLICY -b release-signing
-  -R tangency-labs/solidcraft` once SignPath has issued it. Requests under `release-signing` wait
+  -R getnodalia/torno` once SignPath has issued it. Requests under `release-signing` wait
   for approval in SignPath; the workflow waits up to an hour for each.
 - **Artifact configuration:** `packaging/windows/signpath-artifact-configuration.xml`. When it
   changes, paste the new version into the SignPath project's artifact configuration when it lands.
-- **Test-sign without publishing:** `gh workflow run release.yml -R tangency-labs/solidcraft --ref
+- **Test-sign without publishing:** `gh workflow run release.yml -R getnodalia/torno --ref
   <branch>`, then check the Windows jobs' summaries and the `release-assets`
   artifact.
 - SignPath only signs runs whose jobs all ran on GitHub-hosted runners, so keep the `version`,

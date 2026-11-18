@@ -14,14 +14,14 @@ use torno_doc::joints::{self, Coupling, Joint, JointExprs, JointKind, JointOrigi
 use torno_geom::Aabb3;
 
 use super::CommandSpec;
-use crate::params::{bad, bool_, num, str_, vec3};
+use crate::params::{bad, bool_, num, str_, unique_reference, vec3};
 use crate::schema::joints::{
     AsBuiltJointParams, BudgetStop, CamLift, CamParams, CamResult, ContactStop, CouplingResult, CreateJointParams, DeleteJointParams,
     DeleteJointResult, DriveJointParams, DriveJointResult, EditJointResult, FloatingChain, GearParams, HeldValue, InspectJointParams,
     InspectJointResult, JointAddedResult, JointDeleted, JointFrame, JointLimitsParams, JointProblem, LimitSide, LimitStop, LinkInfo,
     ListJointsParams, ListJointsResult, ListedJoint, ListedOrigin, LoopStop, MakeJointOriginParams, MakeJointOriginResult, MotionLinkParams,
-    NamedValue, OccurrenceDof, RackPinionParams, ReachLoopStop, ReachParams, ReachResult, ReachedJoint, RigidGroupParams, RigidGroupResult,
-    ScrewParams, SolveJointsParams, SolveReport, SolveResult, ValueUnit,
+    MotionLinkResult, NamedValue, OccurrenceDof, RackPinionParams, ReachLoopStop, ReachParams, ReachResult, ReachedJoint, RigidGroupParams,
+    RigidGroupResult, ScrewParams, SolveJointsParams, SolveReport, SolveResult, ValueUnit,
 };
 use crate::schema::{TypedContract, output_schema_for};
 use crate::{EngineError, Result, Session};
@@ -47,6 +47,9 @@ const CAM_CONTRACT: TypedContract<CamParams> = TypedContract::new();
 #[path = "joints_inspect.rs"]
 mod inspect;
 
+#[path = "assembly_constraint.rs"]
+pub(crate) mod constraint;
+
 pub static COMMANDS: &[CommandSpec] = &[
     CommandSpec::new("joint.origin", "Joint Origin", crate::checked!("joint.origin", joint_origin))
         .at("SOLID", "CREATE")
@@ -69,9 +72,9 @@ pub static COMMANDS: &[CommandSpec] = &[
          b's z against a's as two faces meet - two plane or axis datums mate aligned, each part keeping its side of the datum, and flip mates them; \
          true: b's z along a's, so two origins given at one point with the same z and x stay as they are; \
          a point origin without x takes its x from z, so give x on both, or use joint.as_built, to keep a turned part where it is); \
-         offset?: mm or an expression; angle?: deg or an expression (an angle relation's tilt from mated; for other joints the default \
+         offset_x?, offset_y?: lateral mm in a's frame (expressions evaluated once); offset?: mm or an expression; angle?: deg or an expression (an angle relation's tilt from mated; for other joints the default \
          is none, or a half turn where that turns b less, so faces that already meet stay as they are); name?; quiet?: bool (leave \
-         out dof and fixed). An expression (text) is \
+         out dof and fixed). An expression for offset, angle or a value is \
          kept with the joint and worked out again whenever the design changes, so the joint follows the parameters it names; a joint whose \
          expression no longer works out (a parameter deleted) is left out of the solve with the reason in its errors",
     ),
@@ -115,8 +118,8 @@ pub static COMMANDS: &[CommandSpec] = &[
         .at("SOLID", "ASSEMBLE")
         .icon("motion_link")
         .contract(&MOTION_LINK_CONTRACT)
-        .output(output_schema_for::<SolveResult>)
-        .params("a, b: joints; ratio (b = ratio · a + offset): b's units per a's (mm per deg for an angle driving a distance); offset?: in b's units (deg for an angle, mm for a distance, or an expression); ia?, ib?: value indices (default 0)"),
+        .output(output_schema_for::<MotionLinkResult>)
+        .params("a, b: joints; ratio (b = ratio · a + offset): b's units per a's (mm per deg for an angle driving a distance); offset?: in b's units (deg for an angle, mm for a distance, or an expression); ia?, ib?: value indices (default 0); link?: index (put this link in place of that motion link, as the gear and cam commands do) → link: the link's index, as joint.list numbers them"),
     CommandSpec::new("joint.gear", "Gear", crate::checked!("joint.gear", gear))
         .at("SOLID", "ASSEMBLE")
         .icon("gear")
@@ -126,7 +129,7 @@ pub static COMMANDS: &[CommandSpec] = &[
         "a, b: joints that turn (revolute), b driven by a; ra, rb: the gears' pitch radii (or tooth counts): mm, an expression, or \
          {circle: [x,y,z], occurrence?}: the round face there, its radius (read again whenever the design changes, so the ratio follows \
          edits); internal?: bool (one is a ring gear: both turn the same way; by default b turns the other way); reverse?: bool; \
-         link?: index (replace that motion link) → link, ratio (b's degrees per a's); b keeps where it is, also when the link replaces \
+         link?: index (replace that motion link; a radius left out then keeps the old gear's, picked round face included) → link, ratio (b's degrees per a's); b keeps where it is, also when the link replaces \
          another (at the current pose)",
     ),
     CommandSpec::new("joint.rack_pinion", "Rack and Pinion", crate::checked!("joint.rack_pinion", rack_pinion))
@@ -137,7 +140,7 @@ pub static COMMANDS: &[CommandSpec] = &[
         .params(
         "a, b: a joint that turns (revolute: the pinion) and one that slides (slider: the rack), in either order, b driven by a; \
          radius: the pinion's pitch radius (mm, an expression, or {circle: [x,y,z], occurrence?}): the rack travels radius × the turn in \
-         radians; reverse?: bool; link?: index (replace that motion link) → link, ratio (mm per degree, or degrees per mm); b keeps \
+         radians; reverse?: bool; link?: index (replace that motion link; the radius left out then keeps the old pinion's, picked round face included) → link, ratio (mm per degree, or degrees per mm); b keeps \
          where it is, also when the link replaces another (at the current pose)",
     ),
     CommandSpec::new("joint.screw", "Screw", crate::checked!("joint.screw", screw))
@@ -147,7 +150,7 @@ pub static COMMANDS: &[CommandSpec] = &[
         .output(output_schema_for::<CouplingResult>)
         .params(
         "joint: a cylindrical joint (its turn drives its travel) | a, b: a joint that turns and one that slides, b driven by a; pitch: \
-         travel per turn (mm or an expression); reverse?: bool (a left-hand thread); link?: index (replace that motion link) → link, \
+         travel per turn (mm or an expression); reverse?: bool (a left-hand thread); link?: index (replace that motion link; the pitch left out then keeps the old screw's) → link, \
          ratio (mm per degree, or degrees per mm); b keeps where it is, also when the link replaces another (at the current \
          pose)",
     ),
@@ -157,7 +160,7 @@ pub static COMMANDS: &[CommandSpec] = &[
         .contract(&CAM_CONTRACT)
         .output(output_schema_for::<CamResult>)
         .params(
-        "a: the cam's joint (revolute); b: the follower's joint, a slider (a translating follower) or a revolute (an oscillating one),          b driven by a; profile: {sketch: id|name, index?: the profile (default: the largest)} | {edges: [[x,y,z]…] (points on edges of          the cam's bodies forming one closed loop, world), occurrence?}: the cam's outline, in a plane square to its axis, read again          whenever the design changes; follower?: knife|roller|flat (default knife; flat: a face square to a slider's line); radius?: the          roller's radius (mm, an expression or {circle: [x,y,z], occurrence?}: the roller's round face, which is its tip too); tip?: a          joint origin where the follower touches: its knife's point or its roller's centre, such as {circle: [x,y,z]} on the roller          (needed for an oscillating follower; a translating one's line runs through it, by default along its slider's axis); flip?: bool (ride the cam from the other side          than the one the follower is on now); link?: index (replace that motion link) → link, lift: {min, max, rise, unit} (b's travel          over a turn of the cam), reverse (the side it rides from), follower_offset (mm: how far a translating follower's line passes          from the cam's axis); b keeps where it is, also when the link replaces another (at the current pose)",
+        "a: the cam's joint (revolute); b: the follower's joint, a slider (a translating follower) or a revolute (an oscillating one),          b driven by a; profile: {sketch: id|name, index?: the profile (default: the largest)} | {edges: [[x,y,z]…] (points on edges of          the cam's bodies forming one closed loop, world), occurrence?}: the cam's outline, in a plane square to its axis, read again          whenever the design changes; follower?: knife|roller|flat (default knife; flat: a face square to a slider's line); radius?: the          roller's radius (mm, an expression or {circle: [x,y,z], occurrence?}: the roller's round face, which is its tip too); tip?: a          joint origin where the follower touches: its knife's point or its roller's centre, such as {circle: [x,y,z]} on the roller          (needed for an oscillating follower; a translating one's line runs through it, by default along its slider's axis); flip?: bool (ride the cam from the other side          than the one the follower is on now); link?: index (replace that motion link; profile, follower, radius and tip left out then keep that cam's definition, picked profile and round face included, and flip left out keeps the side it rides from now) → link, lift: {min, max, rise, unit} (b's travel          over a turn of the cam), reverse (the side it rides from), follower_offset (mm: how far a translating follower's line passes          from the cam's axis); b keeps where it is, also when the link replaces another (at the current pose)",
     ),
     CommandSpec::new("joint.limits", "Joint Limits", crate::checked!("joint.limits", limits))
         .icon("joint")
@@ -170,7 +173,7 @@ pub static COMMANDS: &[CommandSpec] = &[
         .output(output_schema_for::<EditJointResult>)
         .params(
             "joint; a?, b?: joint origins as joint.create takes them (a side left out keeps its place; the two must stay on different occurrences); \
-             type?, flip?, offset?, angle? (a number, or an expression the joint then follows), suppressed?, name?; the joint re-solves, keeping \
+             type?, flip?, offset_x?, offset_y? (plain joints only; length expressions evaluated once), offset?, angle? (a number, or an expression the joint then follows), suppressed?, name?; the joint re-solves, keeping \
              its limits and expressions (a relation's values start again where its parts are); an edit that places it again (not a rename alone) \
              meets a loop it closes as joint.create does, turning an angle a half turn where only that meets it",
         ),
@@ -185,7 +188,7 @@ pub static COMMANDS: &[CommandSpec] = &[
         .contract(&LIST_CONTRACT)
         .output(output_schema_for::<ListJointsResult>)
         .params(
-        "→ joints (type, occurrences, values, limits; expressions: {offset?, angle?, values?} when they were typed as expressions), origins, links, degrees of freedom, conflicts, floating: [{occurrences, joints}] \
+        "→ joints (type, occurrences, values, limits, offset_xy: [x,y] in mm; expressions: {offset?, angle?, values?} when they were typed as expressions), origins, links, degrees of freedom, conflicts, floating: [{occurrences, joints}] \
          (joint chains joined to nothing grounded: the solver places none of them, so driving them moves nothing)",
     ),
     CommandSpec::new("joint.inspect", "Inspect Joint", crate::checked!("joint.inspect", inspect::inspect))
@@ -194,7 +197,7 @@ pub static COMMANDS: &[CommandSpec] = &[
         .contract(&INSPECT_CONTRACT)
         .output(output_schema_for::<InspectJointResult>)
         .params(
-        "joint?: id|name (default: every joint) → joints: [{id, name, type, suppressed, visible, flip, offset (mm), angle (deg), values: as joint.list \
+        "joint?: id|name (default: every joint) → joints: [{id, name, type, suppressed, visible, flip, offset (mm), offset_xy: [x,y] (mm), angle (deg), values: as joint.list \
          gives them, dofs, expressions?: {offset?, angle?, values?}, a, b: {occurrence, occurrence_name, component, component_name, path \
          (occurrence names from the top, `/` between), snap (as saved: type, pick, face, end, edge, corner, x, point, z, in the component's \
          coordinates), references: [{role: face|end|x|edge|corner, name, role_in_feature?: (top, side:c1…), feature?: {id, name, type} (the feature that made the face; \
@@ -236,9 +239,12 @@ pub fn place(s: &mut Session) -> joints::Solution {
 
 /// Work out the offsets, angles and values joints were given as expressions again (a parameter
 /// may have changed). One that can't be worked out (its parameter gone) keeps its numbers; the
-/// solve leaves that joint out and says why.
+/// solve leaves that joint out and says why. A tangent constraint's offset is its gap plus the
+/// radius of its round face as the face is now, so the part keeps resting on the plane when the
+/// radius changes; a face that can't be found keeps the numbers it has.
 fn reexpress(s: &mut Session) {
     let params = joints::Params::new(&s.doc);
+    let st = s.model.state();
     let changed: Vec<(usize, (f64, f64, Vec<f64>))> = s
         .doc
         .assembly
@@ -247,7 +253,10 @@ fn reexpress(s: &mut Session) {
         .enumerate()
         .filter(|(_, j)| !j.exprs.is_empty())
         .filter_map(|(i, j)| {
-            let (o, a, mut q) = joints::expressed(&params, j).ok()?;
+            let (mut o, a, mut q) = joints::expressed(&params, j).ok()?;
+            if j.constraint == Some(joints::Constraint::Tangent) {
+                o += s.doc.origin_radius(&st, &j.b).ok()?;
+            }
             joints::clamp(j, &mut q);
             ((o, a) != (j.offset, j.angle) || q != j.values).then_some((i, (o, a, q)))
         })
@@ -308,13 +317,24 @@ fn solution(s: &Session, held: &joints::Held, analysis: joints::Analysis) -> joi
     joints::solve_holding_with_analysis(&s.doc, &s.model.state(), held, analysis)
 }
 
+/// Applies the solve. A part it moves loses its move not captured, which would hide where the
+/// joints put it; an exploded view's placement stays shown.
 fn resolve_with_analysis(s: &mut Session, held: &joints::Held, analysis: joints::Analysis) -> joints::Solution {
     let sol = solution(s, held, analysis);
     if !sol.world.is_empty() {
         let mut next = (*s.doc).clone();
         if next.apply_joint_solution(&sol) {
+            let moved: BTreeSet<u64> = next
+                .occurrences
+                .iter()
+                .zip(&s.doc.occurrences)
+                .filter(|(n, o)| n.id != o.id || n.transform != o.transform)
+                .map(|(n, _)| n.id)
+                .collect();
             *s.doc_mut() = next;
             s.revision += 1;
+            let exploded = &s.exploded;
+            s.pending_moves.retain(|id, m| !moved.contains(id) || exploded.get(id) == Some(m));
         }
     }
     sol
@@ -326,7 +346,7 @@ fn response_analysis(p: &Value) -> joints::Analysis {
 }
 
 /// A solve's answer; `quiet: true` in the command's params leaves out the per-occurrence lists.
-fn solve_report(sol: &joints::Solution, p: &Value) -> SolveReport {
+pub(super) fn solve_report(sol: &joints::Solution, p: &Value) -> SolveReport {
     let problems = |list: &[(u64, String, String)]| -> Vec<JointProblem> {
         list.iter().map(|(joint, name, why)| JointProblem { joint: *joint, name: name.clone(), why: why.clone() }).collect()
     };
@@ -407,7 +427,15 @@ pub(crate) fn cannot_move(s: &Session, sol: &joints::Solution, id: u64) -> Optio
     if let Some((_, _, why)) = sol.errors.iter().find(|e| e.0 == id) {
         return Some((why.clone(), None));
     }
-    // The solver places what it reaches from the root and grounded occurrences.
+    // A joint between two fixed parts holds both sides: nothing is left to move.
+    let fixed = |o: u64| o == 0 || sol.fixed.contains(&o);
+    if fixed(j.a.occurrence) && fixed(j.b.occurrence) && j.a.occurrence != j.b.occurrence {
+        let held = |o: u64| if o == 0 { "the root".to_string() } else { occurrence_name(s, o) };
+        return Some((format!("both sides are held by grounded parts: {}, {}", held(j.a.occurrence), held(j.b.occurrence)), None));
+    }
+    // The solver places what it reaches from the root and grounded occurrences. A pair joined to
+    // nothing grounded (neither side placed) is a floating chain: its parts are not placed, so
+    // driving the joint moves nothing, and the reply says which part is joined to nothing.
     let placed = |o: u64| o == 0 || sol.world.contains_key(&o);
     if placed(j.a.occurrence) || placed(j.b.occurrence) {
         return None;
@@ -590,7 +618,7 @@ fn plane_side(s: &Session, name: &str, occurrence: u64, cmd: &str) -> Result<tor
     let st = s.model.state();
     if let Some(c) = st.construct.iter().find(|c| c.name == trimmed) {
         if matches!(c.geom, torno_doc::construct::ConstructGeom::Plane(_)) {
-            return Ok(torno_doc::PlaneRef::Construction { feature: c.feature.into() });
+            return Ok(torno_doc::PlaneRef::Construction { feature: c.feature.into(), placement: None });
         }
         return Err(bad(cmd, format!("`{trimmed}` is not a construction plane")));
     }
@@ -660,7 +688,7 @@ fn origin_from_name(s: &Session, name: &str, occurrence: Option<u64>, cmd: &str)
         });
         let snap = match &c.geom {
             torno_doc::construct::ConstructGeom::Plane(_) => {
-                Snap::Plane { plane: Box::new(torno_doc::PlaneRef::Construction { feature: c.feature.into() }), pick: None, x: None }
+                Snap::Plane { plane: Box::new(torno_doc::PlaneRef::Construction { feature: c.feature.into(), placement: None }), pick: None, x: None }
             }
             torno_doc::construct::ConstructGeom::Axis { .. } => {
                 Snap::Axis { axis: Box::new(torno_doc::joints::AxisRef::construction(name_trim.to_string())), pick: None, x: None }
@@ -1020,7 +1048,12 @@ pub(crate) fn joint_id(s: &Session, v: Option<&Value>, cmd: &str) -> Result<u64>
     let joint = if let Some(Value::Number(number)) = v {
         number.as_u64().and_then(|id| s.doc.assembly.joints.iter().find(|joint| joint.id == id))
     } else {
-        s.doc.assembly.joints.iter().find(|joint| joint.id.to_string() == key || joint.name == key)
+        unique_reference(
+            cmd,
+            "joint",
+            &key,
+            s.doc.assembly.joints.iter().filter(|joint| joint.id.to_string() == key || joint.name == key).map(|joint| (joint.id, joint)),
+        )?
     };
     joint.map(|joint| joint.id).ok_or_else(|| bad(cmd, format!("no joint `{key}`")))
 }
@@ -1036,6 +1069,12 @@ pub(crate) fn value(s: &Session, v: &Value, angle: bool, cmd: &str) -> Result<f6
     }
     .ok_or_else(|| bad(cmd, format!("a joint value {}", crate::params::expr_problem(Some(v)))))?;
     s.doc.eval(&e, kind).map_err(|e| bad(cmd, e.to_string()))
+}
+
+/// Lateral offsets are evaluated once and stored as finite distances, like the dialog's X/Y.
+fn lateral_value(s: &Session, v: &Value, cmd: &str) -> Result<f64> {
+    let distance = value(s, v, false, cmd)?;
+    if distance.is_finite() && distance.abs() < 1e9 { Ok(distance) } else { Err(bad(cmd, "lateral offsets must be finite and smaller than 1e9 mm")) }
 }
 
 /// The expression a number was typed as, kept so the joint follows the parameters it names
@@ -1079,6 +1118,15 @@ fn values_param(s: &Session, p: &Value, kind: JointKind, cmd: &str) -> Result<Ve
     Ok(out)
 }
 
+fn limit_pair(s: &Session, lo: &Value, hi: &Value, angle: bool, cmd: &str) -> Result<(f64, f64)> {
+    let lo = value(s, lo, angle, cmd)?;
+    let hi = value(s, hi, angle, cmd)?;
+    if lo > hi {
+        return Err(bad(cmd, "joint limit minimum must not exceed maximum"));
+    }
+    Ok((lo, hi))
+}
+
 fn limits_param(s: &Session, p: &Value, kind: JointKind, cmd: &str) -> Result<Vec<Option<(f64, f64)>>> {
     let n = kind.dofs().len();
     let mut out = vec![None; n];
@@ -1090,7 +1138,7 @@ fn limits_param(s: &Session, p: &Value, kind: JointKind, cmd: &str) -> Result<Ve
             if let (Some(lo), Some(hi)) = (l.get(0), l.get(1))
                 && let Some(slot) = out.get_mut(i)
             {
-                *slot = Some((value(s, lo, kind.is_angle(i), cmd)?, value(s, hi, kind.is_angle(i), cmd)?));
+                *slot = Some(limit_pair(s, lo, hi, kind.is_angle(i), cmd)?);
             }
         }
     }
@@ -1148,14 +1196,14 @@ fn add_joint(s: &mut Session, mut j: Joint, p: &Value) -> Result<Value> {
         return Err(EngineError::Other("too many joints".into()));
     }
     check_sides(&j.a, &j.b, "joint.create")?;
-    // Relations and loop-closing typed joints start where their parts are. A typed joint in
+    // Relations, constraints and loop-closing typed joints start where their parts are. A typed joint in
     // an open chain keeps its usual initial values; explicitly supplied values also keep theirs.
     // A joint on a plane or axis side anchors its part to that geometry: it starts where its
     // parts are too, so the part keeps its place on the plane (or along the axis) instead of
     // jumping to the geometry's origin.
     if p.get("values").is_none()
         && p.get("value").is_none()
-        && (j.kind.is_relation() || closes_loop(s, &j) || datum_sided(&j))
+        && (j.starts_where_it_is() || closes_loop(s, &j) || datum_sided(&j))
         && let Some(q) = joints::relation_values(&s.doc, &s.model.state(), &j)
     {
         j.values = q;
@@ -1341,12 +1389,23 @@ fn joint(s: &mut Session, p: &Value) -> Result<Value> {
     let kind = kind_param(p, cmd)?;
     let a = origin_param(s, p.get("a"), cmd)?;
     let b = origin_param(s, p.get("b"), cmd)?;
+    let j = new_joint(s, p, kind, a, b, cmd)?;
+    add_joint(s, j, p)
+}
+
+/// A joint of `kind` between origins `a` and `b`, with the values, limits, flip, offset, angle and
+/// name `p` gives (as joint.create reads them), not yet added.
+fn new_joint(s: &mut Session, p: &Value, kind: JointKind, a: JointOrigin, b: JointOrigin, cmd: &str) -> Result<Joint> {
     let id = s.doc_mut().allocate_id()?;
     let name = new_joint_name(s, p, kind);
     let offset = match p.get("offset") {
         Some(v) => value(s, v, false, cmd)?,
         None => 0.0,
     };
+    let offset_xy = [
+        p.get("offset_x").map(|v| lateral_value(s, v, cmd)).transpose()?.unwrap_or(0.0),
+        p.get("offset_y").map(|v| lateral_value(s, v, cmd)).transpose()?.unwrap_or(0.0),
+    ];
     let angle = match p.get("angle") {
         Some(v) => Some(value(s, v, true, cmd)?),
         None => None,
@@ -1364,13 +1423,16 @@ fn joint(s: &mut Session, p: &Value) -> Result<Value> {
         angle: angle.unwrap_or(0.0),
         suppressed: false,
         exprs: JointExprs { offset: typed(p.get("offset")), angle: typed(p.get("angle")), values: value_exprs(p) },
+        offset_xy,
+        captured: None,
+        constraint: None,
     };
     // No angle given: B keeps its turn about the joint's axis where a half turn would otherwise
     // come only from how its origin's x was chosen. (An angle relation's angle is its tilt.)
     if angle.is_none() && !j.kind.is_relation() {
         j.angle = joints::least_turn_angle(&s.doc, &s.model.state(), &j);
     }
-    add_joint(s, j, p)
+    Ok(j)
 }
 
 fn as_built(s: &mut Session, p: &Value) -> Result<Value> {
@@ -1409,6 +1471,9 @@ fn as_built(s: &mut Session, p: &Value) -> Result<Value> {
         angle: 0.0,
         suppressed: false,
         exprs: Default::default(),
+        offset_xy: [0.0; 2],
+        captured: None,
+        constraint: None,
     };
     add_joint(s, j, p)
 }
@@ -1630,9 +1695,26 @@ fn reach(s: &mut Session, p: &Value) -> Result<Value> {
     let before = super::motion::positions(s);
     let st = s.model.state();
     let r = joints::reach(&s.doc, &st, &joints::Reach { occurrence: occ, point: at, to, axis, joints: only });
+    let mut stopped_by_contact = None;
     let reached = match &r {
+        // Only a reach that moves something touches the design (and so adds an undo step).
+        Ok(x) if !x.values.is_empty() && s.doc.assembly.contact_enabled => {
+            // With contact sets on, the joints go toward the values found as joint.drive moves
+            // them, stopping where two parts of a set would pass into each other (#14682). No
+            // value is held on the way: the loops close from each step, so a loop the values
+            // close at both ends doesn't stop the drag in between.
+            let want: Vec<(u64, Vec<f64>)> = x.values.iter().map(|(id, q)| (*id, q.clone())).collect();
+            let (out, _) = super::motion::drive_with_contact(s, &want, &BTreeSet::new())?;
+            stopped_by_contact = out
+                .get("stopped_by_contact")
+                .filter(|v| v.is_object())
+                .cloned()
+                .map(serde_json::from_value::<ContactStop>)
+                .transpose()
+                .map_err(|e| bad(cmd, e.to_string()))?;
+            x.clone()
+        }
         Ok(x) => {
-            // Only a reach that moves something touches the design (and so adds an undo step).
             if !x.values.is_empty() {
                 let doc = s.doc_mut();
                 for (id, q) in &x.values {
@@ -1667,7 +1749,10 @@ fn reach(s: &mut Session, p: &Value) -> Result<Value> {
         .filter_map(|id| name(*id))
         .map(|j| ReachedJoint { joint: j.id, name: j.name.clone(), values: named_value_list(j, effective.get(&j.id).unwrap_or(&j.values)) })
         .collect();
-    let stopped_by_limit = (!reached.limits.is_empty()).then(|| {
+    // A contact that stopped it came first: the limits and loop the reach found further on are
+    // not where it rests.
+    let contact_stopped = stopped_by_contact.is_some();
+    let stopped_by_limit = (!contact_stopped && !reached.limits.is_empty()).then(|| {
         reached
             .limits
             .iter()
@@ -1691,7 +1776,8 @@ fn reach(s: &mut Session, p: &Value) -> Result<Value> {
         values,
         moved: super::motion::moved(&before, &super::motion::positions(s)).next().is_some(),
         stopped_by_limit,
-        stopped_by_loop: reached.stopped_by_loop.and_then(name).map(|j| ReachLoopStop { joint: j.name.clone() }),
+        stopped_by_loop: reached.stopped_by_loop.filter(|_| !contact_stopped).and_then(name).map(|j| ReachLoopStop { joint: j.name.clone() }),
+        stopped_by_contact,
         reason: r.err(),
         continuous: (bool_(p, "continuous") == Some(true)).then_some(true),
         param_warnings: Vec::new(),
@@ -1704,7 +1790,11 @@ fn reach(s: &mut Session, p: &Value) -> Result<Value> {
 fn body_centre(s: &Session, occ: u64) -> Vec3 {
     let comp = s.doc.occurrences.iter().find(|o| o.id == occ).map(|o| o.component).unwrap_or(0);
     let st = s.model.state();
-    st.bodies.iter().filter(|b| s.doc.model_body_component(b) == comp).fold(Aabb3::EMPTY, |bb, b| bb.union(&b.mesh().bounds())).center()
+    st.bodies
+        .iter()
+        .filter(|b| s.doc.model_body_component(b) == comp)
+        .fold(Aabb3::EMPTY, |bb, b| bb.union(&b.body.exact_bounds().unwrap_or(Aabb3::EMPTY)))
+        .center()
 }
 
 fn motion_link(s: &mut Session, p: &Value) -> Result<Value> {
@@ -1725,9 +1815,27 @@ fn motion_link(s: &mut Session, p: &Value) -> Result<Value> {
         None => 0.0,
     };
     let ratio = ratio * ratio_scale(s, a, ia, b, ib);
-    s.doc_mut().assembly.links.push(MotionLink { a, ia, b, ib, ratio, offset, coupling: None, lift: Vec::new() });
+    let l = MotionLink { a, ia, b, ib, ratio, offset, coupling: None, lift: Vec::new() };
+    // Add the link, or put it in place of link `link`, as the coupling commands do. The offset is
+    // the one typed, for a plain link keeps exactly what it was given, new or replacing.
+    let index = match p.get("link") {
+        None => {
+            let doc = s.doc_mut();
+            doc.assembly.links.push(l);
+            doc.assembly.links.len() - 1
+        }
+        Some(v) => {
+            let i = v
+                .as_u64()
+                .and_then(|i| usize::try_from(i).ok())
+                .filter(|i| *i < s.doc.assembly.links.len())
+                .ok_or_else(|| bad(cmd, "no such motion link"))?;
+            s.doc_mut().assembly.links[i] = l;
+            i
+        }
+    };
     let sol = resolve(s);
-    reply(cmd, SolveResult { solved: solve_report(&sol, p), param_warnings: Vec::new() })
+    reply(cmd, MotionLinkResult { solved: solve_report(&sol, p), link: index, param_warnings: Vec::new() })
 }
 
 /// A coupling length: a number (mm), an expression (kept as typed, so it follows the
@@ -1742,6 +1850,25 @@ fn size_param(s: &Session, p: &Value, key: &str, cmd: &str) -> Result<Size> {
         },
         _ => Err(bad(cmd, format!("`{key}` must be a length (mm or an expression) or a round face ({{circle: [x, y, z]}})"))),
     }
+}
+
+/// `size_param`, but where the command replaces a motion link a size may be left out and comes
+/// from the coupling being replaced: an edit dialog can't re-offer a picked round face, so an
+/// edited coupling keeps the sizes it wasn't given.
+fn size_param_or(s: &Session, p: &Value, key: &str, cmd: &str, old: Option<&Size>) -> Result<Size> {
+    if p.get(key).is_none()
+        && let Some(old) = old
+    {
+        return Ok(old.clone());
+    }
+    size_param(s, p, key, cmd)
+}
+
+/// The coupling of the motion link `link` points at, for the edit path: a command replacing a
+/// link takes its definition for what the call leaves out.
+fn replaced_coupling<'a>(s: &'a Session, p: &Value) -> Option<&'a Coupling> {
+    let i = p.get("link")?.as_u64().and_then(|i| usize::try_from(i).ok())?;
+    s.doc.assembly.links.get(i)?.coupling.as_ref()
 }
 
 /// A joint's first value that turns (an angle), or that travels (a distance).
@@ -1776,9 +1903,13 @@ fn gear(s: &mut Session, p: &Value) -> Result<Value> {
     let (a, b) = joint_pair(s, p, cmd)?;
     let turn = |id: u64| value_index(s, id, true).ok_or_else(|| bad(cmd, "gears need two joints that turn (revolute)"));
     let (ia, ib) = (turn(a)?, turn(b)?);
+    let old = match replaced_coupling(s, p) {
+        Some(Coupling::Gear { ra, rb, .. }) => Some((ra.clone(), rb.clone())),
+        _ => None,
+    };
     let c = Coupling::Gear {
-        ra: size_param(s, p, "ra", cmd)?,
-        rb: size_param(s, p, "rb", cmd)?,
+        ra: size_param_or(s, p, "ra", cmd, old.as_ref().map(|(r, _)| r))?,
+        rb: size_param_or(s, p, "rb", cmd, old.as_ref().map(|(_, r)| r))?,
         internal: bool_(p, "internal").unwrap_or(false),
         reverse: reverse(p),
     };
@@ -1789,7 +1920,11 @@ fn rack_pinion(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "joint.rack_pinion";
     let (a, b) = joint_pair(s, p, cmd)?;
     let (ia, ib) = turn_and_travel(s, a, b, cmd)?;
-    let c = Coupling::RackPinion { radius: size_param(s, p, "radius", cmd)?, reverse: reverse(p) };
+    let old = match replaced_coupling(s, p) {
+        Some(Coupling::RackPinion { radius, .. }) => Some(radius.clone()),
+        _ => None,
+    };
+    let c = Coupling::RackPinion { radius: size_param_or(s, p, "radius", cmd, old.as_ref())?, reverse: reverse(p) };
     reply(cmd, couple(s, p, cmd, MotionLink { a, ia, b, ib, ratio: 1.0, offset: 0.0, coupling: Some(c), lift: Vec::new() })?)
 }
 
@@ -1809,7 +1944,11 @@ fn screw(s: &mut Session, p: &Value) -> Result<Value> {
             (a, ia, b, ib)
         }
     };
-    let c = Coupling::Screw { pitch: size_param(s, p, "pitch", cmd)?, reverse: reverse(p) };
+    let old = match replaced_coupling(s, p) {
+        Some(Coupling::Screw { pitch, .. }) => Some(pitch.clone()),
+        _ => None,
+    };
+    let c = Coupling::Screw { pitch: size_param_or(s, p, "pitch", cmd, old.as_ref())?, reverse: reverse(p) };
     reply(cmd, couple(s, p, cmd, MotionLink { a, ia, b, ib, ratio: 1.0, offset: 0.0, coupling: Some(c), lift: Vec::new() })?)
 }
 
@@ -1825,23 +1964,56 @@ fn cam_cmd(s: &mut Session, p: &Value) -> Result<Value> {
         Some(JointKind::Revolute) => true,
         _ => return Err(bad(cmd, "the follower (b) is a slider or a revolute joint")),
     };
-    let follower = match str_(p, "follower").unwrap_or("knife") {
-        "knife" => Follower::Knife,
-        "roller" => Follower::Roller { radius: size_param(s, p, "radius", cmd)? },
-        "flat" => Follower::Flat,
-        _ => return Err(bad(cmd, "`follower` is knife, roller or flat")),
+    // A cam link being replaced: an edit dialog can't re-offer a picked profile or round face, so
+    // the command keeps the definition of the link it replaces for everything it is not given.
+    let old = match replaced_coupling(s, p) {
+        Some(Coupling::Cam(c)) => Some(c.clone()),
+        _ => None,
     };
-    if oscillating && p.get("tip").is_none() && !matches!(follower, Follower::Roller { radius: Size::Circle(_) }) {
+    let follower = match (str_(p, "follower"), old.as_ref()) {
+        (Some("knife"), _) => Follower::Knife,
+        (Some("roller"), _) => Follower::Roller {
+            radius: size_param_or(
+                s,
+                p,
+                "radius",
+                cmd,
+                match old.as_ref().map(|c| &c.follower) {
+                    Some(Follower::Roller { radius }) => Some(radius),
+                    _ => None,
+                },
+            )?,
+        },
+        (Some("flat"), _) => Follower::Flat,
+        (Some(_), _) => return Err(bad(cmd, "`follower` is knife, roller or flat")),
+        (None, Some(c)) => c.follower.clone(),
+        (None, None) => Follower::Knife,
+    };
+    let old_tip = old.as_ref().and_then(|c| c.tip.clone());
+    if oscillating && p.get("tip").is_none() && old_tip.is_none() && !matches!(follower, Follower::Roller { radius: Size::Circle(_) }) {
         return Err(bad(cmd, "an oscillating follower needs `tip`: its knife's point or its roller's centre ({circle: [x, y, z]} on the roller)"));
     }
     let tip = match p.get("tip") {
         Some(v) => Some(origin_param(s, Some(v), cmd)?),
-        None => None,
+        None => old_tip,
     };
-    let mut c = Cam { profile: cam_profile(s, p, cmd)?, follower, tip, reverse: false };
+    let profile = match old.as_ref().filter(|_| p.get("profile").is_none()) {
+        Some(c) => c.profile.clone(),
+        None => cam_profile(s, p, cmd)?,
+    };
+    let mut c = Cam { profile, follower, tip, reverse: false };
     let probe = MotionLink { a, ia: 0, b, ib: 0, ratio: 1.0, offset: 0.0, coupling: None, lift: Vec::new() };
     let st = s.model.state();
-    c.reverse = cam::default_reverse(&s.doc, &st, &probe, &c).map_err(|e| bad(cmd, e.to_string()))? != bool_(p, "flip").unwrap_or(false);
+    let side = cam::default_reverse(&s.doc, &st, &probe, &c).map_err(|e| bad(cmd, e.to_string()))?;
+    // `flip` left out when replacing a cam link: it keeps riding from the side it rides from now.
+    let flip = match bool_(p, "flip") {
+        Some(f) => f,
+        None => match old.as_ref() {
+            Some(c) => side != c.reverse,
+            None => false,
+        },
+    };
+    c.reverse = side != flip;
     let offset = cam::follower_offset(&s.doc, &st, &probe, &c).map_err(|e| bad(cmd, e.to_string()))?;
     let reverse = c.reverse;
     let coupled = couple(s, p, cmd, MotionLink { coupling: Some(Coupling::Cam(c)), ..probe })?;
@@ -2007,7 +2179,7 @@ fn limits(s: &mut Session, p: &Value) -> Result<Value> {
         return Err(bad(cmd, "no such value"));
     }
     let lim = match (p.get("min"), p.get("max")) {
-        (Some(lo), Some(hi)) => Some((value(s, lo, kind.is_angle(i), cmd)?, value(s, hi, kind.is_angle(i), cmd)?)),
+        (Some(lo), Some(hi)) => Some(limit_pair(s, lo, hi, kind.is_angle(i), cmd)?),
         (None, None) => None,
         _ => return Err(bad(cmd, "give both `min` and `max`, or neither to clear")),
     };
@@ -2026,6 +2198,28 @@ fn limits(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn edit(s: &mut Session, p: &Value) -> Result<Value> {
+    edit_joint(s, p, true)
+}
+
+/// The new name `p` gives joint `id` in an edit, if it changes it. A new name over 128 characters
+/// is refused before anything changes, as the other renames refuse it, in the name of the command
+/// `called`; the joint's own name (joint.create takes any) is kept whatever its length, spaces
+/// round it or not, and a blank one changes nothing.
+fn edited_name(s: &Session, id: u64, p: &Value, called: &str) -> Result<Option<String>> {
+    let Some(n) = str_(p, "name").map(str::trim).filter(|n| !n.is_empty()) else { return Ok(None) };
+    let own = s.doc.assembly.joints.iter().find(|j| j.id == id).map(|j| j.name.trim());
+    if own == Some(n) {
+        return Ok(None);
+    }
+    if n.chars().count() > 128 {
+        return Err(bad(called, "`name` must be at most 128 characters"));
+    }
+    Ok(Some(n.to_string()))
+}
+
+/// joint.edit's change, also run by `assembly.constraint.edit`. `plain`: a change of kind makes a
+/// constraint a plain joint (joint.edit); the constraint command keeps the rule it has just set.
+pub(super) fn edit_joint(s: &mut Session, p: &Value, plain: bool) -> Result<Value> {
     let cmd = "joint.edit";
     let id = joint_id(s, p.get("joint"), cmd)?;
     let kind = match str_(p, "type") {
@@ -2036,10 +2230,13 @@ fn edit(s: &mut Session, p: &Value) -> Result<Value> {
         Some(v) => Some(value(s, v, false, cmd)?),
         None => None,
     };
+    let offset_x = p.get("offset_x").map(|v| lateral_value(s, v, cmd)).transpose()?;
+    let offset_y = p.get("offset_y").map(|v| lateral_value(s, v, cmd)).transpose()?;
     let angle = match p.get("angle") {
         Some(v) => Some(value(s, v, true, cmd)?),
         None => None,
     };
+    let name = edited_name(s, id, p, if plain { cmd } else { "assembly.constraint.edit" })?;
     // The sides, read as joint.create reads them; a side left out keeps its place.
     let a = p.get("a").map(|v| origin_param(s, Some(v), cmd)).transpose()?;
     let b = p.get("b").map(|v| origin_param(s, Some(v), cmd)).transpose()?;
@@ -2050,10 +2247,17 @@ fn edit(s: &mut Session, p: &Value) -> Result<Value> {
         let orig_b = b.as_ref().unwrap_or(&j.b);
         check_sides(orig_a, orig_b, cmd)?;
     }
+    let saved = s.doc.assembly.joints.iter().find(|j| j.id == id).ok_or_else(|| bad(cmd, "joint"))?;
+    if saved.constraint.is_some()
+        && kind.is_none_or(|k| k == saved.kind)
+        && (offset_x.is_some_and(|x| x != saved.offset_xy[0]) || offset_y.is_some_and(|y| y != saved.offset_xy[1]))
+    {
+        return Err(bad(cmd, "lateral offsets require a plain joint; assembly constraints keep their reference geometry"));
+    }
     let doc = s.doc_mut();
     let Some(j) = doc.assembly.joints.iter_mut().find(|j| j.id == id) else { return Err(bad(cmd, "joint")) };
     // As they were: Edit Joint sends the type, offset and flip with every edit, changed or not.
-    let (was_kind, was_offset, was_flip, was_suppressed) = (j.kind, j.offset, j.flip, j.suppressed);
+    let (was_kind, was_offset, was_offset_xy, was_flip, was_suppressed) = (j.kind, j.offset, j.offset_xy, j.flip, j.suppressed);
     if let Some(a) = a {
         j.a = a;
     }
@@ -2063,6 +2267,14 @@ fn edit(s: &mut Session, p: &Value) -> Result<Value> {
     if let Some(k) = kind {
         let was = j.kind;
         j.kind = k;
+        // A constraint changed to another kind of joint is a plain joint now: its tag would keep
+        // restarting it, and a tangent's gap expression would leave the radius out of its offset.
+        if k != was && plain {
+            if j.constraint == Some(joints::Constraint::Tangent) {
+                j.exprs.offset = None;
+            }
+            j.constraint = None;
+        }
         j.values.resize(k.dofs().len(), 0.0);
         j.limits.resize(k.dofs().len(), None);
         j.exprs.values.truncate(k.dofs().len());
@@ -2074,9 +2286,19 @@ fn edit(s: &mut Session, p: &Value) -> Result<Value> {
             }
         }
     }
+    if let Some(x) = offset_x {
+        j.offset_xy[0] = x;
+    }
+    if let Some(y) = offset_y {
+        j.offset_xy[1] = y;
+    }
     if let Some(o) = offset {
         j.offset = o;
         j.exprs.offset = typed(p.get("offset"));
+        // A tangent constraint's offset is its gap: the radius is added when it is solved.
+        if j.constraint == Some(joints::Constraint::Tangent) {
+            j.exprs.offset.get_or_insert_with(|| format!("{o} mm"));
+        }
     }
     if let Some(a) = angle {
         j.angle = a;
@@ -2085,8 +2307,8 @@ fn edit(s: &mut Session, p: &Value) -> Result<Value> {
     if let Some(f) = bool_(p, "flip") {
         j.flip = f;
     }
-    if let Some(n) = str_(p, "name").map(str::trim).filter(|n| !n.is_empty() && n.len() <= 128) {
-        j.name = n.to_string();
+    if let Some(n) = name {
+        j.name = n;
     }
     if let Some(x) = bool_(p, "suppressed") {
         suppress_joints(s.doc_mut(), &[id], x);
@@ -2113,12 +2335,15 @@ fn edit(s: &mut Session, p: &Value) -> Result<Value> {
         && !sides
         && kind.is_none_or(|k| k == was_kind)
         && offset.is_none_or(|o| (o - was_offset).abs() <= 1e-9)
+        && offset_x.is_none_or(|x| (x - was_offset_xy[0]).abs() <= 1e-9)
+        && offset_y.is_none_or(|y| (y - was_offset_xy[1]).abs() <= 1e-9)
         && bool_(p, "flip").is_none_or(|f| f == was_flip);
-    // Otherwise a relation whose type, offset, tilt or flip changes, or whose sides move, starts
-    // again from where its parts are.
-    let reseat = !tilt_only && (kind.is_some() || offset.is_some() || angle.is_some() || p.get("flip").is_some() || sides);
+    // Otherwise a relation or a constraint whose type, offset, tilt or flip changes, or whose
+    // sides move, starts again from where its parts are.
+    let reseat = !tilt_only
+        && (kind.is_some() || offset.is_some() || offset_x.is_some() || offset_y.is_some() || angle.is_some() || p.get("flip").is_some() || sides);
     if reseat {
-        let edited = s.doc.assembly.joints.iter().find(|j| j.id == id).filter(|j| j.kind.is_relation()).cloned();
+        let edited = s.doc.assembly.joints.iter().find(|j| j.id == id).filter(|j| j.starts_where_it_is()).cloned();
         if let Some(q) = edited.and_then(|j| joints::relation_values(&s.doc, &s.model.state(), &j))
             && let Some(j) = s.doc_mut().assembly.joints.iter_mut().find(|j| j.id == id)
         {
@@ -2195,8 +2420,12 @@ fn list(s: &mut Session, p: &Value) -> Result<Value> {
         .joints
         .iter()
         .map(|j| {
-            let world = |o: &JointOrigin| {
-                s.doc.origin_world(&st, o).ok().map(|m| JointFrame { origin: [m[3][0], m[3][1], m[3][2]], z: [m[2][0], m[2][1], m[2][2]] })
+            let world = |o: &JointOrigin, is_a: bool| {
+                s.doc
+                    .origin_world(&st, o)
+                    .ok()
+                    .map(|m| if is_a { j.offset_frame_a(m) } else { m })
+                    .map(|m| JointFrame { origin: [m[3][0], m[3][1], m[3][2]], z: [m[2][0], m[2][1], m[2][2]] })
             };
             ListedJoint {
                 id: j.id,
@@ -2207,11 +2436,13 @@ fn list(s: &mut Session, p: &Value) -> Result<Value> {
                 values: named_value_list(j, vals.get(&j.id).map(Vec::as_slice).unwrap_or_default()),
                 flip: j.flip,
                 offset: j.offset,
+                offset_xy: j.offset_xy,
                 suppressed: j.suppressed,
                 visible: s.joint_visible(j.id),
-                frame_a: world(&j.a),
-                frame_b: world(&j.b),
+                frame_a: world(&j.a, true),
+                frame_b: world(&j.b, false),
                 expressions: (!j.exprs.is_empty()).then(|| j.exprs.clone()),
+                constraint: j.constraint,
             }
         })
         .collect();
@@ -2311,9 +2542,48 @@ mod reach_tests;
 #[cfg(test)]
 #[path = "joints_relations_tests.rs"]
 mod relations_tests;
+/// Capture Position: every moving joint keeps its current values (as the solver places them) as
+/// its captured position. Returns how many joints were captured.
+pub(in crate::cmd) fn capture_values(s: &mut Session) -> usize {
+    let current = joints::joint_values(&s.doc.assembly);
+    if s.doc.assembly.joints.iter().all(|j| j.kind == JointKind::Rigid) {
+        return 0;
+    }
+    let mut n = 0;
+    for j in s.doc_mut().assembly.joints.iter_mut().filter(|j| j.kind != JointKind::Rigid) {
+        let mut q = current.get(&j.id).cloned().unwrap_or_else(|| j.values.clone());
+        q.resize(j.kind.dofs().len(), 0.0);
+        j.captured = Some(q);
+        n += 1;
+    }
+    n
+}
+
+/// Revert Position: every joint with a captured position goes back to it, clamped to its limits.
+/// A joint with none (a design from before captured joint values) keeps its values. The values
+/// put back drop their expressions, as `joint.drive` does. Returns how many joints went back.
+pub(in crate::cmd) fn revert_values(s: &mut Session) -> usize {
+    if !s.doc.assembly.joints.iter().any(|j| j.captured.is_some() && j.kind != JointKind::Rigid) {
+        return 0;
+    }
+    let mut n = 0;
+    for j in s.doc_mut().assembly.joints.iter_mut().filter(|j| j.kind != JointKind::Rigid) {
+        let Some(mut q) = j.captured.clone() else { continue };
+        q.resize(j.kind.dofs().len(), 0.0);
+        joints::clamp(j, &mut q);
+        j.values = q;
+        for i in 0..j.kind.dofs().len() {
+            j.exprs.set_value(i, None);
+        }
+        n += 1;
+    }
+    resolve(s);
+    n
+}
+
 #[cfg(test)]
 #[path = "joints_tests.rs"]
-mod tests;
+pub(crate) mod tests;
 #[cfg(test)]
 #[path = "joints_turn_tests.rs"]
 mod turn_tests;

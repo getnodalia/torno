@@ -26,3 +26,4 @@ skills/torno-packaging/SKILL.md
 .github/ISSUE_TEMPLATE/**
 .github/pull_request_template.md
 .github/workflows/maintainer-triage.yml
+crates/ui-egui/src/links.rs

@@ -475,7 +475,7 @@ pub(super) fn same_model_source(app: &SolveApp, document: &std::sync::Weak<torno
     // Match ergonomics bind references, including vectors and point-cloud data.
     macro_rules! compare_authoring_fields {
         ($($field:ident),* $(,)?) => {{
-            let torno_engine::doc::Document { render: _, $($field),* } = source.as_ref();
+            let torno_engine::doc::Document { render: _, drawings: _, $($field),* } = source.as_ref();
             true $(&& $field == &app.session.doc.$field)*
         }};
     }
@@ -515,7 +515,9 @@ pub(super) fn same_model_source(app: &SolveApp, document: &std::sync::Weak<torno
         timeline_groups,
         browser_order,
         named_views,
+        notes,
         visibility,
+        plugin_data,
     )
 }
 
