@@ -85,8 +85,13 @@ Torno compares the answer with its own version on your computer.
 
 - Offline, or GitHub doesn't answer within 15 seconds: nothing is shown, and the check is tried
   again an hour later (or at the next start, whichever comes first).
-- GitHub's rate limit for anonymous requests (60 an hour per address) is respected: when GitHub
-  says to wait, Torno waits that long, Check now and the check at start included.
+- GitHub's rate limit for anonymous requests (60 an hour per address, shared by everything on the
+  network) is respected: when GitHub refuses the check (`403` or `429`), Torno asks the release
+  page, `https://github.com/getnodalia/torno/releases/latest`, which says the newest version
+  without counting against the limit. The update window then offers that release with its page
+  (no package); only when that fails too does Torno wait as long as GitHub says.
+- A package download that drops or stalls (no byte for a minute) picks up where it stopped with a
+  `Range` request, up to five attempts in a row without progress, instead of starting over.
 - Turning off **Check for updates automatically** stops the checks; only **Check now** asks.
 - Setting the environment variable `TORNO_UPDATE_CHECK=0` turns all checks off, for
   example on managed machines.
