@@ -10,6 +10,7 @@ workspace = true
 
 [dependencies]
 torno-viewport = { workspace = true }
+solidcore-ops = { workspace = true }
 solidcore-record = { workspace = true }
 solidcore-tess = { workspace = true }
 torno-color = { workspace = true }
@@ -19,9 +20,14 @@ torno-kernel = { workspace = true }
 torno-profile = { workspace = true }
 torno-render = { workspace = true }
 torno-derive = { workspace = true }
+torno-format = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true, features = ["raw_value"] }
 thiserror = { workspace = true }
 log = { workspace = true }
 sha2 = { workspace = true }
 web-time = { workspace = true }
+
+# Lists the format change files (build.rs).
+[build-dependencies]
+torno-format = { workspace = true }

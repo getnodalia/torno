@@ -49,12 +49,19 @@ not modelling a part through MCP.
 - **Merge flow.** The heavy CI jobs start when a maintainer adds `approved-for-ci`; approved PRs go
   through the merge queue (`gh pr merge N -R getnodalia/torno --squash --auto`), which runs the
   full suite on each group before it lands on `main`. Never force-push `main`.
-- **Do not push only to catch up with `main`** (no merge of `main`, no Update branch, no rebase for
-  that alone): every push restarts the whole CI run, and `main`'s own run catches what lands in between.
-  When you push anyway, or GitHub reports a conflict, rebase onto the latest `main` and push your own
-  branch with `--force-with-lease`; never merge `main` into a PR. Resolve conflicts without discarding
-  others' work. Do not re-run CI on an unchanged commit: re-run only a job that runner trouble
-  cancelled, with "Re-run failed jobs".
+- **Do not push only to catch up with `main`:** every push restarts the whole CI run, and `main`'s own
+  run catches what lands in between. When you push anyway, or GitHub reports a conflict, rebase onto
+  the latest `main` (preferred for your own branch; push it with `--force-with-lease`) or merge `main`
+  in; both are fine. Never force-push a branch someone else works on. Automation that updates your PR
+  merges `main` into your branch and never force-pushes over your history. Resolve conflicts without
+  discarding others' work. Do not re-run CI on an unchanged commit: re-run only a job that runner
+  trouble cancelled, with "Re-run failed jobs".
+- **Kernel, series and drawings.** Kernel work goes in `solidcore/` on `main` (there is no kernel
+  branch) and follows `solidcore/docs/layers.md` and §7 of
+  `solidcore/docs/definitions-and-certificates.md`. The first PR of a series that sets a shape (a type,
+  error shape, API, format or schema) gets a design review before later parts are accepted. Drawings
+  work targets the `drawings` branch. A UI addition needs full-flow 1280×720 screenshots and a
+  small-window check.
 - **Evidence.** For observable CAD, UI or model behaviour (kernel, geometry, assembly and backend
   changes included), the issue or PR carries real screenshots or a short recording from a small
   reproduction, preferably before and after, with steps and expected/actual behaviour. Capture it
@@ -210,7 +217,7 @@ Use the affected crate and test module in commands such as:
 ```sh
 cargo test --profile ci -p torno-engine --lib -- tests::feature_inputs_are_parameters
 cargo clippy -p torno-engine --all-targets -- -D warnings
-cargo fmt --all -- --check
+cargo xtask fmt --check
 cargo xtask ci
 ```
 

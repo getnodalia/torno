@@ -9,7 +9,8 @@ working (see the [compatibility notes](https://github.com/tangency-labs/solidcra
 Download the installer for your system from the
 [Download section of the README](https://github.com/tangency-labs/solidcraft#download) or the
 [releases page](https://github.com/getnodalia/torno/releases), or build it yourself with
-stable Rust (1.95 or newer):
+[rustup](https://rustup.rs/), which installs the Rust version the repository pins
+(`rust-toolchain.toml`, 1.99.1) the first time you run `cargo` in it:
 
 ```sh
 git clone https://github.com/getnodalia/torno && cd torno
@@ -91,12 +92,11 @@ A Torno remote added before the project moved to `getnodalia.github.io/torno` (f
 `flatpak remote-modify --user --url=https://getnodalia.github.io/torno/flatpak/repo/ torno` and
 `flatpak update --user`.
 
-Earlier releases used the application IDs `ai.storyteller.solidcraft` and, up to 0.7,
-`ai.storyteller.solvecraft`. If you installed one of those from the Torno remote,
+Earlier releases used the application ID `ai.storyteller.solidcraft`. If you installed that from the Torno remote,
 `flatpak update --user` reports it as end-of-life and offers to replace it with
 `dev.danielmiguelt.Torno`; accept, and your settings and autosaves move with it. If you
 installed a `.flatpak` bundle, install the new bundle, launch it once (it copies your settings),
-then run `flatpak uninstall --user ai.storyteller.solidcraft` (or `ai.storyteller.solvecraft`; see the
+then run `flatpak uninstall --user ai.storyteller.solidcraft` (see the
 [compatibility notes](https://github.com/tangency-labs/solidcraft/blob/main/docs/compatibility.md#linux-app-id)).
 
 Alternatively, download the release's `.flatpak` file for your architecture and run
@@ -279,6 +279,28 @@ joystick instead of the mouse wheel. Delete the file to undo it.
 </AppCfg>
 ```
 
+### Shift+right-click in Firefox
+
+In Firefox, holding Shift while you right-click opens Firefox's own menu (Save Image As…,
+Inspect and so on), and a web page can't stop it. On Linux, Torno doesn't see the click at
+all: the face isn't selected and Torno's menu doesn't open. On Windows, Torno selects
+the face and opens its menu, and Firefox's menu opens on top. Chrome, Edge and the desktop app
+aren't affected.
+
+The gestures this blocks in Firefox, and what to use instead:
+
+- **Shift+right drag** to snap to the nearest standard or diagonal view (every preset): click an
+  axis on the axis view, or drag the axis view with Shift held, which snaps the same way.
+- **Shift+right drag** to pan in the Tinkercad preset: middle drag pans too.
+- **Shift+right drag** to zoom in the OpenSCAD preset: Shift+middle drag or the wheel zooms too.
+- **Shift+Alt+right drag** to zoom in the Alias preset: the wheel zooms too.
+
+To have Firefox pass Shift+right-click to the page, open `about:config`, search for
+`dom.event.contextmenu.shift_suppresses_event` and set it to `false`. It takes effect at once,
+without a restart. It applies to every website, though: Shift+right-click will no longer get
+past pages that block right-click. Firefox Sync doesn't copy it, so set it on each computer.
+Setting it back to `true` undoes it.
+
 ## CLI
 
 `torno-cli` runs the same commands without a window:
@@ -412,11 +434,10 @@ and Z is up.
 
 ## Name and compatibility
 
-Torno was renamed from an earlier working name. Since 0.5.0 everything uses the new
-name: the `torno` and `torno-cli` programs, `.solidcraft` designs (`.sc` since then), `TORNO_*`
-environment variables, settings folders and the `torno` MCP server. Upgrading keeps
-working: designs, settings, recovery files, environment variables and CLI/MCP setups from
-earlier builds carry over. Every compatibility shim is listed in the
+Torno was renamed from an earlier working name, and that name is gone: the `torno`
+and `torno-cli` programs, `.sc` designs, `TORNO_*` environment variables, settings
+folders and the `torno` MCP server all use the current name. Designs saved by earlier
+builds still open, whatever their file extension. Every compatibility shim is listed in the
 [compatibility notes](https://github.com/tangency-labs/solidcraft/blob/main/docs/compatibility.md).
 
 Use the Torno documentation and web-app URLs. GitHub redirects links to the renamed

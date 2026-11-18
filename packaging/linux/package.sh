@@ -3,7 +3,6 @@
 #
 #   $DIST/torno-<version>-linux-<arch>.AppImage        any distro with glibc >= the build host's
 #   $DIST/torno-<version>-linux-<arch>.AppImage.zsync  delta updates (needs zsyncmake)
-#   $DIST/solvecraft-<version>-linux-<arch>.AppImage.zsync  the same, for pre-rename AppImages
 #   $DIST/torno-<version>-linux-<arch>.deb             Debian, Ubuntu, Mint, Pop!_OS, ...
 #   $DIST/torno-<version>-linux-<arch>.rpm             Fedora, openSUSE, RHEL, ...
 #   $DIST/torno-<version>-linux-<arch>.tar.gz          plain FHS-style tree (bin/, share/)
@@ -38,7 +37,7 @@ case "$ARCH" in
   aarch64 | arm64) ARCH=aarch64; DEB_ARCH=arm64 ;;
   *) echo "unsupported architecture $ARCH" >&2; exit 2 ;;
 esac
-export TORNO_MAINTAINER="${TORNO_MAINTAINER:-${SOLVECRAFT_MAINTAINER:-Torno contributors <https://github.com/getnodalia/torno>}}"  # SOLVECRAFT_*: compatibility shim, see docs/compatibility.md
+export TORNO_MAINTAINER="${TORNO_MAINTAINER:-Torno contributors <https://github.com/getnodalia/torno>}"
 BASENAME="torno-$VERSION-linux-$ARCH"
 
 echo "==> Torno $VERSION for Linux $ARCH ($FORMATS)"
@@ -65,9 +64,7 @@ rm -rf "$WORK"
 # ---- stage an FHS tree (shared by every format) -------------------------------------------------
 install -Dm755 "$BIN/torno" "$STAGE/usr/bin/torno"
 install -Dm755 "$BIN/torno-cli" "$STAGE/usr/bin/torno-cli"
-# Compatibility shim (docs/compatibility.md): the old CLI name forwards to torno-cli.
-install -Dm755 "$BIN/solvecraft-cli" "$STAGE/usr/bin/solvecraft-cli"
-strip "$STAGE/usr/bin/torno" "$STAGE/usr/bin/torno-cli" "$STAGE/usr/bin/solvecraft-cli" 2>/dev/null || true
+strip "$STAGE/usr/bin/torno" "$STAGE/usr/bin/torno-cli" 2>/dev/null || true
 install -Dm644 "$ROOT/assets/platforms/linux/$APP_ID.desktop" "$STAGE/usr/share/applications/$APP_ID.desktop"
 install -Dm644 "$ROOT/assets/platforms/linux/$APP_ID.mime.xml" "$STAGE/usr/share/mime/packages/$APP_ID.xml"
 mkdir -p "$STAGE/usr/share/metainfo"
@@ -145,12 +142,6 @@ if has appimage; then
   echo "wrote $OUT"
   if [ -s "$OUT.zsync" ]; then
     echo "wrote $OUT.zsync"
-    # Compatibility shim (docs/compatibility.md): AppImages from before the rename look for
-    # `solvecraft-*-linux-$ARCH.AppImage.zsync` in the latest release. The same .zsync under that
-    # name (its URL is the new AppImage's file name, relative to the release) updates them to
-    # Torno.
-    cp "$OUT.zsync" "$DIST/solvecraft-$VERSION-linux-$ARCH.AppImage.zsync"
-    echo "wrote $DIST/solvecraft-$VERSION-linux-$ARCH.AppImage.zsync (legacy update alias)"
   else
     warn "zsyncmake not found, so $OUT.zsync was not written; AppImage delta updates need it"
   fi

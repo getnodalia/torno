@@ -1,7 +1,7 @@
 //! The Nodalia Design Language on top of Torno's palettes: every interface surface, text, border,
 //! control and accent comes from NDL's palettes with Torno's accent (`nodalia_theme`). What a
-//! design means stays Torno's own: sketch, selection, workspace and analysis colours, the view
-//! cube's axes, previews and the colour vision variants are not touched here.
+//! design means stays Torno's own: sketch, selection, workspace and analysis colours, the
+//! navigator axes, previews and the colour vision variants are not touched here.
 //!
 //! The dark palette is NDL's dark one lifted a few steps, as in Forja: NDL's near-black frame reads
 //! too dark around a 3D view over a long session. The steps between the frame, the panels and the
@@ -132,7 +132,7 @@ pub const fn apply(mut t: Tokens, dark: bool) -> Tokens {
     t.figure_card = c(p.surface_raised);
     t.figure_accent = c(p.accent_text);
 
-    // Navigation bar, view cube and tips.
+    // Navigation bar and tips.
     t.nav_hover = c(p.control_bg_hover);
     t.nav_press = c(p.control_bg_pressed);
     t.nav_dim = c(p.text_tertiary);
@@ -140,9 +140,6 @@ pub const fn apply(mut t: Tokens, dark: bool) -> Tokens {
     t.nav_tip = c(p.surface_inverse);
     t.nav_tip_ink = c(p.text_inverse);
     t.nav_field = c(p.control_field_bg);
-    t.cube_border = c(p.border_default);
-    t.cube_text = c(p.text_primary);
-    t.cube_hover = c(p.accent_subtle);
     t.glyph_bg = c(p.surface_raised);
 
     // The start page and file views.
