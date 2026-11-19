@@ -584,6 +584,8 @@ pub struct Updater {
     pub installed: Option<Result<install::Outcome, String>>,
     /// A program for the host to start as Torno exits (restart, installer).
     launch: Option<(PathBuf, Vec<String>)>,
+    /// macOS: the verified disk image the host swaps in for `Torno.app` as Torno exits.
+    replace: Option<PathBuf>,
     /// The host should drop process-local graphics fallback overrides for this restart.
     graphics_restart: bool,
 }
@@ -623,8 +625,9 @@ pub fn available(app: &mut SolveApp) -> bool {
 pub fn tick(app: &mut SolveApp, ctx: &egui::Context) {
     poll_install(app);
     // Quitting to restart or install was cancelled (a "save changes?" answered Cancel).
-    if app.updater.launch.is_some() && app.docs.quitting.is_none() && !app.quit_requested {
+    if (app.updater.launch.is_some() || app.updater.replace.is_some()) && app.docs.quitting.is_none() && !app.quit_requested {
         app.updater.launch = None;
+        app.updater.replace = None;
         app.updater.graphics_restart = false;
     }
     if !app.updater.started {
@@ -767,7 +770,13 @@ pub fn install_method(app: &mut SolveApp) -> Option<install::Method> {
     #[cfg(not(target_arch = "wasm32"))]
     {
         let exe = std::env::current_exe().ok();
-        install::method(app.updater.kind(), exe.as_deref())
+        let method = install::method(app.updater.kind(), exe.as_deref());
+        // A copy the host can replace where it runs updates and restarts like the other apps; any
+        // other macOS copy opens the disk image.
+        match method {
+            Some(install::Method::Dmg) if app.services.stage_replacement.is_some() => Some(install::Method::MacApp),
+            other => other,
+        }
     }
     #[cfg(target_arch = "wasm32")]
     {
@@ -795,7 +804,7 @@ pub fn start_install(app: &mut SolveApp, ctx: &egui::Context) {
     {
         let ctx = ctx.clone();
         let staging = std::env::temp_dir().join("torno-update");
-        let net = install::Net { get, download, feed };
+        let net = install::Net { get, download, stage: app.services.stage_replacement.clone(), feed };
         let spawned = std::thread::Builder::new().name("update-install".into()).spawn(move || {
             let result = install::run(&release, &kind, &method, std::env::consts::ARCH, &net, &staging, &progress);
             let _ = tx.send(result);
@@ -850,7 +859,7 @@ fn poll_install(app: &mut SolveApp) {
             }
             let _ = dmg;
         }
-        Ok(install::Outcome::Restart(_)) => {}
+        Ok(install::Outcome::Restart(_) | install::Outcome::Replace(_)) => {}
         Err(e) => log::warn!("update: {e}"),
     }
     app.updater.installed = Some(result);
@@ -858,10 +867,18 @@ fn poll_install(app: &mut SolveApp) {
 
 /// Restart now: close (asking about unsaved designs), then start the new version.
 pub fn restart(app: &mut SolveApp) {
-    if let Some(Ok(install::Outcome::Restart(program))) = &app.updater.installed {
-        app.updater.launch = Some((program.clone(), Vec::new()));
-        app.updater.graphics_restart = false;
-        crate::documents::request_quit(app);
+    match &app.updater.installed {
+        Some(Ok(install::Outcome::Restart(program))) => {
+            app.updater.launch = Some((program.clone(), Vec::new()));
+            app.updater.graphics_restart = false;
+            crate::documents::request_quit(app);
+        }
+        Some(Ok(install::Outcome::Replace(package))) => {
+            app.updater.replace = Some(package.clone());
+            app.updater.graphics_restart = false;
+            crate::documents::request_quit(app);
+        }
+        _ => {}
     }
 }
 
@@ -878,6 +895,11 @@ pub fn restart_graphics(app: &mut SolveApp) {
 /// Whether the pending launch applies graphics settings, consumed by the native host.
 pub fn take_graphics_restart(app: &mut SolveApp) -> bool {
     std::mem::take(&mut app.updater.graphics_restart) && app.updater.launch.is_some()
+}
+
+/// For the host, as Torno exits (macOS): the verified disk image to swap in for `Torno.app`.
+pub fn take_replacement(app: &mut SolveApp) -> Option<PathBuf> {
+    app.updater.replace.take()
 }
 
 /// For the host, as Torno exits: the program to start (the new version, an installer).
@@ -924,7 +946,7 @@ pub fn show(app: &mut SolveApp, ctx: &egui::Context) {
     let downloading = app.updater.job.is_some();
     let state = match &app.updater.installed {
         _ if downloading => State::Downloading,
-        Some(Ok(install::Outcome::Restart(_))) => State::Restart,
+        Some(Ok(install::Outcome::Restart(_) | install::Outcome::Replace(_))) => State::Restart,
         Some(Ok(install::Outcome::Installer(..) | install::Outcome::Opened(_))) => State::Started,
         _ => State::Offer,
     };
