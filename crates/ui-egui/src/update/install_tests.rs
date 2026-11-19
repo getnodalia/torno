@@ -2,7 +2,7 @@ use super::install::*;
 use super::{Asset, FetchError, InstallKind, Release};
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 /// A minisign key pair made for these tests (its secret key thrown away), and its prehashed
 /// signature of [`SIGNED_SUMS`] with the trusted comment "Torno v9.9.9".
@@ -49,6 +49,7 @@ fn methods_per_installation() {
     assert_eq!(method(&InstallKind::WindowsMsi, Some(exe)), Some(Method::Msi));
     assert_eq!(method(&InstallKind::WindowsPortable, Some(exe)), Some(Method::PortableZip(exe.into())));
     assert_eq!(method(&InstallKind::WindowsExe, Some(exe)), Some(Method::Exe(exe.into())));
+    // The host upgrades this to `Method::MacApp` when it can replace the bundle where it runs.
     assert_eq!(method(&InstallKind::MacApp("/A/S.app".into()), Some(exe)), Some(Method::Dmg));
     for never in [
         InstallKind::Flatpak("id".into()),
@@ -84,6 +85,7 @@ fn net(files: Vec<(String, Vec<u8>)>) -> Net {
     let find2 = find;
     Net {
         feed: None,
+        stage: None,
         get: Arc::new(move |url: &str| find(&files, url).ok_or_else(|| FetchError::Failed(format!("404 {url}")))),
         download: Arc::new(move |url: &str, to: &Path, progress: &dyn Fn(u64, Option<u64>) -> bool| {
             let body = find2(&f2, url).ok_or_else(|| FetchError::Failed(format!("404 {url}")))?;
@@ -144,6 +146,7 @@ fn an_appimage_is_replaced_only_when_it_verifies() {
     let find = |files: &[(String, Vec<u8>)], url: &str| files.iter().find(|(n, _)| url == format!("{BASE}{n}")).map(|(_, b)| b.clone());
     let n = Net {
         feed: None,
+        stage: None,
         get: Arc::new(move |url: &str| {
             let body = find(&files, url).ok_or_else(|| FetchError::Failed(format!("404 {url}")))?;
             if url.ends_with(SUMS) {
@@ -251,8 +254,8 @@ fn an_updated_appimage_takes_the_release_file_name() {
     assert_eq!(new("/a/torno-0.16.2-linux-x86_64.AppImage"), Path::new("/a/torno-0.17.0-linux-x86_64.AppImage"));
     assert_eq!(
         new("/a/solvecraft-0.9.0-linux-x86_64.AppImage"),
-        Path::new("/a/solvecraft-0.9.0-linux-x86_64.AppImage"),
-        "not a release name of ours"
+        Path::new("/a/torno-0.17.0-linux-x86_64.AppImage"),
+        "a release name from before the rename moves to the new one"
     );
     assert_eq!(new("/a/Torno.AppImage"), Path::new("/a/Torno.AppImage"), "a name the user chose");
     assert_eq!(new("/a/torno-linux-x86_64.AppImage"), Path::new("/a/torno-linux-x86_64.AppImage"), "no version in it");
@@ -305,6 +308,7 @@ fn installation_refreshes_the_release_and_verifies_the_final_package() {
         let chosen_base = if expected == "10.0.0" { base } else { BASE };
         let n = Net {
             feed: None,
+            stage: None,
             get: Arc::new(move |url| {
                 if url == super::LATEST_API {
                     return answer.clone();
@@ -338,4 +342,49 @@ fn installation_refreshes_the_release_and_verifies_the_final_package() {
         }
     }
     let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn a_mac_app_is_staged_verified_and_left_for_the_host_to_swap_in() {
+    let dir = scratch("mac-replace");
+    let name = "torno-macos-universal.dmg";
+    let image = b"disk image".to_vec();
+    let sums = format!("{}  {name}\n", hex(&image));
+    let r = release_with(&[(name, image.len()), (SUMS, 100)]);
+    let mut n = net(vec![(SUMS.into(), sums.into_bytes())]);
+    let staged = dir.join("staged.dmg");
+    let seen = Arc::new(Mutex::new(Vec::new()));
+    let (target, record, bytes) = (staged.clone(), seen.clone(), image.clone());
+    n.stage = Some(Arc::new(move |asked: &str, url: &str, size: u64, sha: &str, progress: &dyn Fn(u64, Option<u64>) -> bool| {
+        record.lock().unwrap().push((asked.to_string(), url.to_string(), size, sha.to_string()));
+        assert!(progress(size, Some(size)));
+        std::fs::write(&target, &bytes).map_err(|e| FetchError::Failed(e.to_string()))?;
+        Ok(target.clone())
+    }));
+    let kind = InstallKind::MacApp("/Applications/Torno.app".into());
+    let out = run(&r, &kind, &Method::MacApp, "aarch64", &n, &dir.join("staging"), &Progress::default()).unwrap();
+    assert_eq!(out, Outcome::Replace(staged.clone()), "nothing is replaced yet: the host swaps the bundle in as Torno quits");
+    assert_eq!(
+        *seen.lock().unwrap(),
+        vec![(name.to_string(), format!("{BASE}{name}"), image.len() as u64, hex(&image))],
+        "the host is told the digest the signed list gives"
+    );
+    assert_eq!(apply(&Method::MacApp, &staged).unwrap(), Outcome::Replace(staged.clone()));
+
+    // Cancel pressed while the image downloads: it is deleted and nothing is offered.
+    let progress = Arc::new(Progress::default());
+    let (pressed, target) = (progress.clone(), staged.clone());
+    n.stage = Some(Arc::new(move |_: &str, _: &str, _: u64, _: &str, _: &dyn Fn(u64, Option<u64>) -> bool| {
+        pressed.cancel.store(true, std::sync::atomic::Ordering::Relaxed);
+        std::fs::write(&target, b"x").map_err(|e| FetchError::Failed(e.to_string()))?;
+        Ok(target.clone())
+    }));
+    let out = run(&r, &kind, &Method::MacApp, "aarch64", &n, &dir.join("staging"), &progress);
+    assert_eq!(out, Err("cancelled".to_string()));
+    assert!(!staged.exists(), "a cancelled image is not kept");
+
+    // A copy that can't replace itself has no staging at all.
+    n.stage = None;
+    assert!(run(&r, &kind, &Method::MacApp, "aarch64", &n, &dir.join("staging"), &Progress::default()).is_err());
+    let _ = std::fs::remove_dir_all(&dir);
 }

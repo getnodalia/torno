@@ -31,6 +31,7 @@ mod desktop_theme;
 #[cfg(any(target_os = "windows", target_os = "macos"))]
 mod desktop_transparency;
 mod device_lost;
+mod mac_update;
 #[cfg(target_os = "windows")]
 mod native_crash;
 #[cfg(target_os = "macos")]
@@ -510,6 +511,9 @@ impl Drop for App {
         }
         // Restart only after eframe has flushed settings. Graphics restarts also reopen
         // the saved designs collected by the normal quit flow.
+        if let Some(package) = torno_ui_egui::update::take_replacement(&mut self.solve) {
+            mac_update::replace_bundle(&package);
+        }
         let graphics_restart = torno_ui_egui::update::take_graphics_restart(&mut self.solve);
         if let Some((program, args)) = torno_ui_egui::update::take_launch(&mut self.solve) {
             let mut command = if graphics_restart {
@@ -870,6 +874,7 @@ fn services(cc: &eframe::CreationContext<'_>, folder: &DialogFolder) -> Services
         reduce_transparency: None,
         http_get: Some(std::sync::Arc::new(http_get)),
         http_download: Some(std::sync::Arc::new(http_download)),
+        stage_replacement: mac_update::stage_replacement(),
         // Already an installed app: only the browser build offers to install.
         install_app: None,
         can_restore: None,

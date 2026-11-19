@@ -40,8 +40,9 @@ pub const CONTROL: f32 = 28.0;
 pub const CONTROL_MARGIN: f32 = 6.0;
 /// The three caption buttons together.
 pub const WIDTH: f32 = 3.0 * BUTTON_WIDTH;
-/// Room for the macOS traffic lights at the bar's left end.
-pub const TRAFFIC_LIGHTS: f32 = 76.0;
+/// Room for the macOS traffic lights at the bar's left end: nodalia-design's measure, the same in
+/// every Nodalia app.
+pub const TRAFFIC_LIGHTS: f32 = nodalia_theme::titlebar::MAC_LIGHTS;
 /// Windows' resize border at 100 % (96 DPI): `SM_CXSIZEFRAME` + `SM_CXPADDEDBORDER`, 4 + 4 px.
 pub const RESIZE_BORDER_AT_96_DPI: f32 = 8.0;
 
@@ -128,6 +129,12 @@ pub fn toggle_maximize(ctx: &egui::Context) {
     ctx.send_viewport_cmd(ViewportCommand::Maximized(!maximized(ctx)));
 }
 
+/// Whether the desktop keeps its window buttons at the left end of the bar: some Linux desktops
+/// do (GNOME's `button-layout`, KDE's titlebar buttons; `NODALIA_WINDOW_BUTTONS=left` forces it).
+pub fn system_captions_left() -> bool {
+    nodalia_theme::titlebar::system_side() == nodalia_theme::titlebar::Side::Left
+}
+
 /// How the window's title bar behaves: which of the OS's controls share the bar.
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
 pub struct TitleBar {
@@ -135,6 +142,9 @@ pub struct TitleBar {
     pub traffic_lights: bool,
     /// No OS decorations (Windows, Linux): the bar has its own caption buttons at the right end.
     pub caption_buttons: bool,
+    /// The caption buttons are at the left end instead, where some Linux desktops keep them
+    /// ([`nodalia_theme::titlebar::system_side`]): close first, then maximize, then minimize.
+    pub captions_left: bool,
 }
 
 /// Where a [`TitleBar`] puts things in the bar's rect.
@@ -144,18 +154,28 @@ pub struct TitleBarLayout {
     pub drag: Option<Rect>,
     /// What is left for the app's contents.
     pub content: Rect,
-    /// The caption buttons, flush with the window's right edge.
+    /// The caption buttons, flush with the window's edge on their side.
     pub captions: Option<Rect>,
 }
 
 impl TitleBar {
     pub fn layout(self, bar: Rect) -> TitleBarLayout {
-        let left = bar.left() + if self.traffic_lights { TRAFFIC_LIGHTS } else { 0.0 };
-        let right = bar.right() - if self.caption_buttons { WIDTH } else { 0.0 };
+        let at_left = self.caption_buttons && self.captions_left;
+        let at_right = self.caption_buttons && !self.captions_left;
+        // After buttons at the left the contents keep the gap every Nodalia bar leaves there.
+        let left = bar.left()
+            + if self.traffic_lights { TRAFFIC_LIGHTS } else { 0.0 }
+            + if at_left { WIDTH + nodalia_theme::titlebar::CONTENT_GAP } else { 0.0 };
+        let right = bar.right() - if at_right { WIDTH } else { 0.0 };
+        let captions = if at_left {
+            Some(Rect::from_min_max(bar.left_top(), pos2(bar.left() + WIDTH, bar.bottom())))
+        } else {
+            at_right.then(|| Rect::from_min_max(pos2(right, bar.top()), bar.right_bottom()))
+        };
         TitleBarLayout {
             drag: (self.traffic_lights || self.caption_buttons).then_some(bar),
             content: Rect::from_min_max(pos2(left, bar.top()), pos2(right, bar.bottom())),
-            captions: self.caption_buttons.then(|| Rect::from_min_max(pos2(right, bar.top()), bar.right_bottom())),
+            captions,
         }
     }
 
@@ -168,7 +188,7 @@ impl TitleBar {
             drag_area(ui, r);
         }
         contents(ui, layout.content);
-        if self.caption_buttons { caption_buttons(ui, bar) } else { None }
+        if self.caption_buttons { caption_buttons(ui, bar, self.captions_left) } else { None }
     }
 }
 
@@ -351,11 +371,12 @@ pub fn reapply_cursor_on_return(ctx: &egui::Context, raw: &egui::RawInput) {
     }
 }
 
-/// Minimize, Maximize/Restore and Close at the right end of `bar`: the Nodalia Design Language's
+/// Minimize, Maximize/Restore and Close at the right end of `bar` (at the left end, close first,
+/// when `left`): the Nodalia Design Language's
 /// three round controls, each a 28 pt disc on its own. Under the pointer minimise takes an amber
 /// tint, maximise a cyan one and close turns coral, with NDL's own glyphs. The one clicked, as the
 /// action for the app to run. Only Linux draws them: macOS and Windows keep their native controls.
-pub fn caption_buttons(ui: &mut Ui, bar: Rect) -> Option<WindowAction> {
+pub fn caption_buttons(ui: &mut Ui, bar: Rect, left: bool) -> Option<WindowAction> {
     let max = maximized(ui.ctx());
     let dark = torno_theme::is_dark();
     let p = torno_theme::ndl::palette(dark);
@@ -363,7 +384,10 @@ pub fn caption_buttons(ui: &mut Ui, bar: Rect) -> Option<WindowAction> {
     use nodalia_theme::window_color as wc;
     let mut clicked = None;
     for (i, c) in CAPTIONS.into_iter().enumerate() {
-        let r = Rect::from_min_size(pos2(bar.right() - WIDTH + i as f32 * BUTTON_WIDTH, bar.top()), vec2(BUTTON_WIDTH, bar.height()));
+        // From the window's edge: slot 0 is the one against it, 2 is the innermost.
+        let slot = if left { 2 - i } else { i };
+        let x = if left { bar.left() + slot as f32 * BUTTON_WIDTH } else { bar.right() - WIDTH + slot as f32 * BUTTON_WIDTH };
+        let r = Rect::from_min_size(pos2(x, bar.top()), vec2(BUTTON_WIDTH, bar.height()));
         let resp = ui.interact(r, caption_id(c), Sense::click());
         let hot = resp.hovered() || resp.has_focus() || resp.is_pointer_button_down_on();
         let (fill, glyph_ink) = match (c, hot) {
@@ -375,7 +399,11 @@ pub fn caption_buttons(ui: &mut Ui, bar: Rect) -> Option<WindowAction> {
         let (fill, glyph_ink) = (nodalia_theme::for_egui::color(fill), nodalia_theme::for_egui::color(glyph_ink));
         let fill = if resp.is_pointer_button_down_on() { torno_theme::ndl::c(p.control_bg_pressed) } else { fill };
         // The disc, centred in its slot: the last one sits a margin in from the window's edge.
-        let centre = pos2(r.center().x - CONTROL_MARGIN * (i as f32 / 2.0), r.center().y);
+        let centre = if left {
+            pos2(r.center().x + CONTROL_MARGIN * ((2 - slot) as f32 / 2.0), r.center().y)
+        } else {
+            pos2(r.center().x - CONTROL_MARGIN * (slot as f32 / 2.0), r.center().y)
+        };
         ui.painter().circle_filled(centre, CONTROL / 2.0, fill);
         let glyph = match c {
             Caption::Minimize => "window-minimize",
@@ -547,19 +575,24 @@ mod tests {
     fn title_bar_from_plain_inputs_insets_for_the_traffic_lights_and_drags_from_empty_space() {
         let bar = Rect::from_min_size(Pos2::ZERO, vec2(1200.0, BAR));
         // macOS: the OS draws the traffic lights over the bar's left end; no caption buttons.
-        let mac = TitleBar { traffic_lights: true, caption_buttons: false };
+        let mac = TitleBar { traffic_lights: true, ..Default::default() };
         let layout = mac.layout(bar);
         assert_eq!(layout.drag, Some(bar));
         assert_eq!(layout.content, Rect::from_min_max(pos2(TRAFFIC_LIGHTS, 0.0), pos2(1200.0, BAR)));
         assert_eq!(layout.captions, None);
         // Windows and Linux without OS decorations: caption buttons at the right end.
-        let own = TitleBar { traffic_lights: false, caption_buttons: true };
+        let own = TitleBar { caption_buttons: true, ..Default::default() };
         let layout = own.layout(bar);
         assert_eq!(layout.drag, Some(bar));
         assert_eq!(layout.content, Rect::from_min_max(pos2(0.0, 0.0), pos2(1200.0 - WIDTH, BAR)));
         assert_eq!(layout.captions, Some(Rect::from_min_max(pos2(1200.0 - WIDTH, 0.0), pos2(1200.0, BAR))));
+        // Where the desktop keeps them on the left (some Linux desktops): the contents start after them.
+        let left = TitleBar { caption_buttons: true, captions_left: true, ..Default::default() };
+        let layout = left.layout(bar);
+        assert_eq!(layout.captions, Some(Rect::from_min_max(pos2(0.0, 0.0), pos2(WIDTH, BAR))));
+        assert_eq!(layout.content, Rect::from_min_max(pos2(WIDTH + nodalia_theme::titlebar::CONTENT_GAP, 0.0), pos2(1200.0, BAR)));
         // The OS's own title bar: the bar is plain content and moves nothing.
-        let os = TitleBar { traffic_lights: false, caption_buttons: false };
+        let os = TitleBar::default();
         assert_eq!(os.layout(bar), TitleBarLayout { drag: None, content: bar, captions: None });
 
         let mut w = Bar::new(mac, 1200.0);
@@ -573,7 +606,7 @@ mod tests {
         cmds.extend(w.gesture(&[empty]).0);
         assert!(cmds.contains(&ViewportCommand::Maximized(true)), "double-click maximizes: {cmds:?}");
 
-        let mut w = Bar::new(TitleBar { traffic_lights: false, caption_buttons: false }, 1200.0);
+        let mut w = Bar::new(TitleBar::default(), 1200.0);
         w.frame(vec![]);
         let (cmds, _) = w.gesture(&[empty, empty + vec2(30.0, 8.0)]);
         assert!(cmds.is_empty(), "no drag area under the OS's own title bar: {cmds:?}");
@@ -581,7 +614,7 @@ mod tests {
 
     #[test]
     fn caption_buttons_return_actions_and_leave_close_to_the_app() {
-        let mut w = Bar::new(TitleBar { traffic_lights: false, caption_buttons: true }, 1200.0);
+        let mut w = Bar::new(TitleBar { caption_buttons: true, ..Default::default() }, 1200.0);
         w.frame(vec![]);
         let at = |c: Caption| w.ctx.read_response(caption_id(c)).map(|r| r.rect.center()).unwrap_or(Pos2::ZERO);
         let (min, max, close) = (at(Caption::Minimize), at(Caption::Maximize), at(Caption::Close));

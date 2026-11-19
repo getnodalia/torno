@@ -466,6 +466,21 @@ fn help_menu_checks_with_automatic_checks_off_and_offers_installation() {
     assert!(h.app.updater.job.is_none());
 }
 
+#[test]
+fn macos_update_now_replaces_the_app_unless_the_preference_is_off() {
+    let mut h = crate::scenario::Harness::new();
+    h.app.updater.kind = Some(InstallKind::MacApp("/Applications/Torno.app".into()));
+    h.app.updater.managed = Some(None);
+    h.app.services.http_get = Some(Arc::new(|_| panic!("not used")));
+    h.app.services.http_download = Some(Arc::new(|_, _, _| panic!("not used")));
+    assert_eq!(install_method(&mut h.app), Some(install::Method::Dmg), "no way to replace the app: the disk image opens");
+    h.app.services.stage_replacement = Some(Arc::new(|_, _, _, _, _| panic!("not used")));
+    assert!(h.app.preferences.update_replaces_app, "replacing the app is the default");
+    assert_eq!(install_method(&mut h.app), Some(install::Method::MacApp));
+    h.app.preferences.update_replaces_app = false;
+    assert_eq!(install_method(&mut h.app), Some(install::Method::Dmg), "the old behaviour is kept behind the preference");
+}
+
 /// Hold an automatic check at its result channel so the manual request can join it without
 /// a second HTTP request or a wall-clock race.
 fn pending_check() -> (crate::scenario::Harness, std::sync::mpsc::Sender<Result<Release, FetchError>>) {
