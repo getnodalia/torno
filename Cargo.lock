@@ -1330,7 +1330,7 @@ dependencies = [
 
 [[package]]
 name = "craft-plugin"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "schemars",
  "serde",
@@ -1340,7 +1340,7 @@ dependencies = [
 
 [[package]]
 name = "craft-plugin-wasm"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "cap-std",
  "craft-plugin",
@@ -6328,7 +6328,7 @@ checksum = "06bdbd8cfc056b8d2e2e85f29b56a3bdbecb527cef81eb39e3e7b98af4652770"
 
 [[package]]
 name = "torno"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "block2 0.6.2",
  "eframe",
@@ -6373,11 +6373,11 @@ dependencies = [
 
 [[package]]
 name = "torno-3dx-client"
-version = "0.2.0"
+version = "0.2.1"
 
 [[package]]
 name = "torno-cli"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "image",
  "log",
@@ -6395,11 +6395,11 @@ dependencies = [
 
 [[package]]
 name = "torno-color"
-version = "0.2.0"
+version = "0.2.1"
 
 [[package]]
 name = "torno-control"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "getrandom 0.3.4",
  "serde",
@@ -6408,7 +6408,7 @@ dependencies = [
 
 [[package]]
 name = "torno-control-egui"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "egui",
  "image",
@@ -6418,7 +6418,7 @@ dependencies = [
 
 [[package]]
 name = "torno-derive"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6427,11 +6427,11 @@ dependencies = [
 
 [[package]]
 name = "torno-display-units"
-version = "0.2.0"
+version = "0.2.1"
 
 [[package]]
 name = "torno-doc"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "log",
  "serde",
@@ -6455,7 +6455,7 @@ dependencies = [
 
 [[package]]
 name = "torno-dynamics"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -6466,7 +6466,7 @@ dependencies = [
 
 [[package]]
 name = "torno-engine"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "craft-plugin",
  "craft-plugin-wasm",
@@ -6500,7 +6500,7 @@ dependencies = [
 
 [[package]]
 name = "torno-format"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "serde_json",
  "sha2 0.10.9",
@@ -6509,7 +6509,7 @@ dependencies = [
 
 [[package]]
 name = "torno-geom"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -6522,7 +6522,7 @@ dependencies = [
 
 [[package]]
 name = "torno-gpu"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "image",
  "log",
@@ -6547,7 +6547,7 @@ dependencies = [
 
 [[package]]
 name = "torno-io"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "cadmpeg-core",
  "cadmpeg-ir",
@@ -6595,7 +6595,7 @@ dependencies = [
 
 [[package]]
 name = "torno-kernel"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "log",
  "proptest",
@@ -6616,7 +6616,7 @@ dependencies = [
 
 [[package]]
 name = "torno-look"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "egui",
  "log",
@@ -6628,7 +6628,7 @@ dependencies = [
 
 [[package]]
 name = "torno-mcp"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "image",
  "serde_json",
@@ -6642,14 +6642,14 @@ dependencies = [
 
 [[package]]
 name = "torno-mcp-server"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "serde_json",
 ]
 
 [[package]]
 name = "torno-profile"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "serde_json",
  "web-time",
@@ -6657,7 +6657,7 @@ dependencies = [
 
 [[package]]
 name = "torno-render"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "flate2",
  "image",
@@ -6680,7 +6680,7 @@ dependencies = [
 
 [[package]]
 name = "torno-sketch"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "harfrust",
  "serde",
@@ -6695,7 +6695,7 @@ dependencies = [
 
 [[package]]
 name = "torno-smlib"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "flate2",
  "log",
@@ -6709,18 +6709,18 @@ dependencies = [
 
 [[package]]
 name = "torno-space-mouse"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "torno-testkit"
-version = "0.2.0"
+version = "0.2.1"
 
 [[package]]
 name = "torno-theme"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "egui",
  "nodalia-theme",
@@ -6731,7 +6731,7 @@ dependencies = [
 
 [[package]]
 name = "torno-ui-egui"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "arboard",
  "egui",
@@ -6775,7 +6775,7 @@ dependencies = [
 
 [[package]]
 name = "torno-ui-kit"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "arboard",
  "egui",
@@ -6799,14 +6799,14 @@ dependencies = [
 
 [[package]]
 name = "torno-ui-registry"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "egui",
 ]
 
 [[package]]
 name = "torno-ui-text"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "log",
  "serde_json",
@@ -6816,7 +6816,7 @@ dependencies = [
 
 [[package]]
 name = "torno-viewport"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "image",
  "serde",
@@ -6828,7 +6828,7 @@ dependencies = [
 
 [[package]]
 name = "torno-viewport-egui"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "egui",
  "egui-wgpu",
@@ -6839,7 +6839,7 @@ dependencies = [
 
 [[package]]
 name = "torno-viewport-gpu"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "log",
  "naga",
@@ -6855,7 +6855,7 @@ dependencies = [
 
 [[package]]
 name = "torno-web"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "eframe",
  "egui",
@@ -8503,7 +8503,7 @@ checksum = "e450f9b2ed1dff33c94c12589a87338689467b9c4f5d8a5710bd09a847d2c8a7"
 
 [[package]]
 name = "xtask"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "flate2",
  "proc-macro2",
