@@ -14,8 +14,11 @@
 //! - Windows portable `.zip` / standalone `.exe`: the running `torno.exe` is renamed to
 //!   `torno.exe.old` (Windows allows renaming a running executable), the new one takes its
 //!   name, and Torno offers a restart; the `.old` file is deleted at the next start.
-//! - macOS: the `.dmg` is verified and opened; the user drags the app to Applications. The
-//!   bundle is never replaced in place from the background.
+//! - macOS: when the host can replace the app where it runs ([`StageReplacement`]), the `.dmg` is
+//!   downloaded and verified in the background and Torno replaces its own bundle as it quits, then
+//!   starts the new one (the host does the swap, like the other Nodalia apps). Where it can't (a
+//!   read-only or translocated copy), the `.dmg` is verified and opened and the user drags the app
+//!   to Applications.
 //! - Flatpak, Snap, `.deb`, `.rpm`, `.tar.gz`: never replaced; the window shows the command.
 
 use std::io::{Read, Write};
@@ -44,6 +47,12 @@ const MAX_UNZIPPED: u64 = 1 << 30;
 /// that returns false.
 pub type HttpDownload = Arc<dyn Fn(&str, &Path, &dyn Fn(u64, Option<u64>) -> bool) -> Result<(), FetchError> + Send + Sync>;
 
+/// The host's download of a macOS update disk image for in-place replacement: calls
+/// `(name, url, size, sha256, progress)`, verifies the image against `sha256` (already checked
+/// against the signed list) and returns where it kept it. Some only when this copy of Torno can be
+/// replaced where it runs.
+pub type StageReplacement = Arc<dyn Fn(&str, &str, u64, &str, &dyn Fn(u64, Option<u64>) -> bool) -> Result<PathBuf, FetchError> + Send + Sync>;
+
 /// How an installation is updated in place.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Method {
@@ -57,6 +66,8 @@ pub enum Method {
     Exe(PathBuf),
     /// Open the downloaded disk image.
     Dmg,
+    /// Replace the running `Torno.app` with the one in the downloaded disk image, as Torno quits.
+    MacApp,
 }
 
 /// The in-place update for an installation, if it has one. `exe` is the running executable.
@@ -80,6 +91,9 @@ pub enum Outcome {
     Installer(PathBuf, Vec<String>),
     /// The disk image was opened for the user.
     Opened(PathBuf),
+    /// The verified disk image waits at this path; the host replaces `Torno.app` with its app as
+    /// Torno quits, then starts the new version.
+    Replace(PathBuf),
 }
 
 /// `SHA256SUMS.txt` lines (`<hex>  <name>` or `<hex> *<name>`): the lowercase hex for `name`.
@@ -170,6 +184,8 @@ impl Progress {
 pub struct Net {
     pub get: super::HttpGet,
     pub download: HttpDownload,
+    /// macOS: the in-place replacement's download (see [`Method::MacApp`]).
+    pub stage: Option<StageReplacement>,
     pub feed: Option<PathBuf>,
 }
 
@@ -238,6 +254,7 @@ pub fn run(
     let part = match method {
         Method::AppImage(target) => sibling(target, ".update")?,
         Method::Exe(exe) => sibling(exe, ".update")?,
+        Method::MacApp => PathBuf::new(),
         Method::Msi | Method::Dmg | Method::PortableZip(_) => {
             std::fs::create_dir_all(staging).map_err(|e| format!("{}: {e}", staging.display()))?;
             staging.join(&asset.name)
@@ -255,6 +272,17 @@ pub fn run(
         }
         !progress.cancel.load(Ordering::Relaxed) && done <= MAX_PACKAGE
     };
+    if matches!(method, Method::MacApp) {
+        // The host keeps the image where the replacement will find it, and has checked it against
+        // the digest from the signed list.
+        let stage = net.stage.as_ref().ok_or("this copy of Torno can't replace itself")?;
+        let package = stage(&asset.name, &asset.url, asset.size, &expected, &report).map_err(|e| format!("{}: {e}", asset.name))?;
+        if progress.cancel.load(Ordering::Relaxed) {
+            let _ = std::fs::remove_file(&package);
+            return Err("cancelled".into());
+        }
+        return Ok(Outcome::Replace(package));
+    }
     (net.download)(&asset.url, &part, &report).map_err(|e| cleanup(format!("{}: {e}", asset.name)))?;
     if progress.cancel.load(Ordering::Relaxed) {
         return Err(cleanup("cancelled".into()));
@@ -327,6 +355,7 @@ pub fn apply(method: &Method, package: &Path) -> Result<Outcome, String> {
         }
         Method::Msi => Ok(Outcome::Installer(PathBuf::from("msiexec"), vec!["/i".into(), package.to_string_lossy().to_string(), "/passive".into()])),
         Method::Dmg => Ok(Outcome::Opened(package.to_path_buf())),
+        Method::MacApp => Ok(Outcome::Replace(package.to_path_buf())),
     }
 }
 

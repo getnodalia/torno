@@ -955,7 +955,7 @@ dependencies = [
  "maybe-owned",
  "rustix 1.1.6",
  "rustix-linux-procfs",
- "windows-sys 0.61.2",
+ "windows-sys 0.60.2",
  "winx",
 ]
 
@@ -1330,7 +1330,7 @@ dependencies = [
 
 [[package]]
 name = "craft-plugin"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "schemars",
  "serde",
@@ -1340,7 +1340,7 @@ dependencies = [
 
 [[package]]
 name = "craft-plugin-wasm"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "cap-std",
  "craft-plugin",
@@ -2238,7 +2238,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -3682,7 +3682,7 @@ dependencies = [
  "objc2-foundation 0.3.2",
  "png",
  "thiserror 2.0.21",
- "windows-sys 0.61.2",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -3787,9 +3787,19 @@ dependencies = [
 [[package]]
 name = "nodalia-theme"
 version = "0.1.0-alpha.1"
-source = "git+https://github.com/danielmigueltejedor/nodalia-design?rev=0b23382ffdff442f53a8cfd0b045bc417f1fa5e9#0b23382ffdff442f53a8cfd0b045bc417f1fa5e9"
+source = "git+https://github.com/danielmigueltejedor/nodalia-design?rev=44bfd0a37e6bd2837c473b4e5607b70e8d169e61#44bfd0a37e6bd2837c473b4e5607b70e8d169e61"
 dependencies = [
  "egui",
+]
+
+[[package]]
+name = "nodalia-update"
+version = "0.1.0-alpha.1"
+source = "git+https://github.com/danielmigueltejedor/nodalia-design?rev=114848a2ff1a7c29c9a5432fb12e955fbe0aeef2#114848a2ff1a7c29c9a5432fb12e955fbe0aeef2"
+dependencies = [
+ "serde_json",
+ "sha2 0.10.9",
+ "ureq",
 ]
 
 [[package]]
@@ -4336,7 +4346,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7d8fae84b431384b68627d0f9b3b1245fcf9f46f6c0e3dc902e9dce64edd1967"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -5268,7 +5278,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys 0.12.1",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -5335,7 +5345,7 @@ dependencies = [
  "security-framework 3.7.0",
  "security-framework-sys",
  "webpki-root-certs",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -6148,7 +6158,7 @@ dependencies = [
  "getrandom 0.4.3",
  "once_cell",
  "rustix 1.1.6",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -6318,7 +6328,7 @@ checksum = "06bdbd8cfc056b8d2e2e85f29b56a3bdbecb527cef81eb39e3e7b98af4652770"
 
 [[package]]
 name = "torno"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "block2 0.6.2",
  "eframe",
@@ -6330,6 +6340,7 @@ dependencies = [
  "libc",
  "log",
  "muda",
+ "nodalia-update",
  "objc2 0.6.5",
  "objc2-app-kit 0.3.2",
  "objc2-foundation 0.3.2",
@@ -6362,11 +6373,11 @@ dependencies = [
 
 [[package]]
 name = "torno-3dx-client"
-version = "0.1.2"
+version = "0.2.0"
 
 [[package]]
 name = "torno-cli"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "image",
  "log",
@@ -6384,11 +6395,11 @@ dependencies = [
 
 [[package]]
 name = "torno-color"
-version = "0.1.2"
+version = "0.2.0"
 
 [[package]]
 name = "torno-control"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "getrandom 0.3.4",
  "serde",
@@ -6397,7 +6408,7 @@ dependencies = [
 
 [[package]]
 name = "torno-control-egui"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "egui",
  "image",
@@ -6407,7 +6418,7 @@ dependencies = [
 
 [[package]]
 name = "torno-derive"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6416,11 +6427,11 @@ dependencies = [
 
 [[package]]
 name = "torno-display-units"
-version = "0.1.2"
+version = "0.2.0"
 
 [[package]]
 name = "torno-doc"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "log",
  "serde",
@@ -6444,7 +6455,7 @@ dependencies = [
 
 [[package]]
 name = "torno-dynamics"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -6455,7 +6466,7 @@ dependencies = [
 
 [[package]]
 name = "torno-engine"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "craft-plugin",
  "craft-plugin-wasm",
@@ -6489,7 +6500,7 @@ dependencies = [
 
 [[package]]
 name = "torno-format"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "serde_json",
  "sha2 0.10.9",
@@ -6498,7 +6509,7 @@ dependencies = [
 
 [[package]]
 name = "torno-geom"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -6511,7 +6522,7 @@ dependencies = [
 
 [[package]]
 name = "torno-gpu"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "image",
  "log",
@@ -6536,7 +6547,7 @@ dependencies = [
 
 [[package]]
 name = "torno-io"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "cadmpeg-core",
  "cadmpeg-ir",
@@ -6584,7 +6595,7 @@ dependencies = [
 
 [[package]]
 name = "torno-kernel"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "log",
  "proptest",
@@ -6605,7 +6616,7 @@ dependencies = [
 
 [[package]]
 name = "torno-look"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "egui",
  "log",
@@ -6617,7 +6628,7 @@ dependencies = [
 
 [[package]]
 name = "torno-mcp"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "image",
  "serde_json",
@@ -6631,14 +6642,14 @@ dependencies = [
 
 [[package]]
 name = "torno-mcp-server"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "serde_json",
 ]
 
 [[package]]
 name = "torno-profile"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "serde_json",
  "web-time",
@@ -6646,7 +6657,7 @@ dependencies = [
 
 [[package]]
 name = "torno-render"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "flate2",
  "image",
@@ -6669,7 +6680,7 @@ dependencies = [
 
 [[package]]
 name = "torno-sketch"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "harfrust",
  "serde",
@@ -6684,7 +6695,7 @@ dependencies = [
 
 [[package]]
 name = "torno-smlib"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "flate2",
  "log",
@@ -6698,18 +6709,18 @@ dependencies = [
 
 [[package]]
 name = "torno-space-mouse"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "torno-testkit"
-version = "0.1.2"
+version = "0.2.0"
 
 [[package]]
 name = "torno-theme"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "egui",
  "nodalia-theme",
@@ -6720,7 +6731,7 @@ dependencies = [
 
 [[package]]
 name = "torno-ui-egui"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "arboard",
  "egui",
@@ -6764,7 +6775,7 @@ dependencies = [
 
 [[package]]
 name = "torno-ui-kit"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "arboard",
  "egui",
@@ -6788,14 +6799,14 @@ dependencies = [
 
 [[package]]
 name = "torno-ui-registry"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "egui",
 ]
 
 [[package]]
 name = "torno-ui-text"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "log",
  "serde_json",
@@ -6805,7 +6816,7 @@ dependencies = [
 
 [[package]]
 name = "torno-viewport"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "image",
  "serde",
@@ -6817,7 +6828,7 @@ dependencies = [
 
 [[package]]
 name = "torno-viewport-egui"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "egui",
  "egui-wgpu",
@@ -6828,7 +6839,7 @@ dependencies = [
 
 [[package]]
 name = "torno-viewport-gpu"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "log",
  "naga",
@@ -6844,7 +6855,7 @@ dependencies = [
 
 [[package]]
 name = "torno-web"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "eframe",
  "egui",
@@ -6981,7 +6992,7 @@ checksum = "f2f6fb2847f6742cd76af783a2a2c49e9375d0a111c7bef6f71cd9e738c72d6e"
 dependencies = [
  "memoffset",
  "tempfile",
- "windows-sys 0.61.2",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -7059,11 +7070,12 @@ checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
 
 [[package]]
 name = "ureq"
-version = "3.4.2"
+version = "3.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a7ac20be9b7726e0bbdbf974c059676d9acb1cd414961f570a4e8231cacd7fc"
+checksum = "3ac5cecf619ca81f66a96482db09687c9f7465af65f4300a8c30cca05bd5a59d"
 dependencies = [
  "base64 0.23.1",
+ "flate2",
  "log",
  "percent-encoding",
  "rustls",
@@ -7071,13 +7083,14 @@ dependencies = [
  "rustls-platform-verifier",
  "ureq-proto",
  "utf8-zero",
+ "webpki-roots",
 ]
 
 [[package]]
 name = "ureq-proto"
-version = "0.6.4"
+version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f86fd172ccca569e458f61b6bdd6220965a9ef36e672a6852953b51a0e1583be"
+checksum = "622dce33c252115466d83f63e9744a18f12b4406aae51a01c15ad8fcf1185eb3"
 dependencies = [
  "base64 0.23.1",
  "http",
@@ -7733,6 +7746,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "webpki-roots"
+version = "1.0.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7265c9301c16a8711c992c2d8da90ee77ef54b1ed51482d6dfeb00dc756b1297"
+dependencies = [
+ "rustls-pki-types",
+]
+
+[[package]]
 name = "weezl"
 version = "0.1.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7955,7 +7977,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -8304,7 +8326,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7d6f32a0ff4a9f6f01231eb2059cc85479330739333e0e58cadf03b6af2cca10"
 dependencies = [
  "cfg-if",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -8481,7 +8503,7 @@ checksum = "e450f9b2ed1dff33c94c12589a87338689467b9c4f5d8a5710bd09a847d2c8a7"
 
 [[package]]
 name = "xtask"
-version = "0.1.2"
+version = "0.2.0"
 dependencies = [
  "flate2",
  "proc-macro2",

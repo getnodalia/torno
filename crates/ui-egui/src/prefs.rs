@@ -1738,6 +1738,10 @@ preference_settings! {
     color_vision: torno_theme::ColorVision = torno_theme::ColorVision::Off, PAGE_APPEARANCE;
     /// Check for updates at start and once a day (docs/updates.md).
     check_updates: bool = true, 0;
+    /// macOS: Update now replaces `Torno.app` where it runs and restarts, like the other Nodalia
+    /// apps (`update_replaces_app`). Off gives the old behaviour: the verified disk image opens
+    /// and the person drags the new app over the old one.
+    update_replaces_app: bool = true, 0;
     /// When the last update check ran, and the versions skipped or put off (`update::Memo`).
     update: crate::update::Memo = crate::update::Memo::default();
     /// The variant last started in each split tool family (Rectangle, Circle, Arc, Slot, Polygon, Line,
