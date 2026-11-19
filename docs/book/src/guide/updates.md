@@ -36,7 +36,7 @@ Where Torno can replace itself safely, the window also has **Update now**:
 | AppImage | Downloads the new AppImage next to the old one, verifies it, renames it over the old file and offers **Restart now**; a file named like a release (`torno-<version>-linux-<arch>.AppImage`) takes the new release's name, so tools such as Gearlever keep finding its update data, and any other name is kept |
 | Windows installer (`.msi`) | **Install (closes Torno)**: downloads and verifies the `.msi`, closes Torno (asking about unsaved designs first) and starts the installer |
 | Windows portable `.zip` or `.exe` | Downloads and verifies the package, swaps in the new `torno.exe` (and `torno-cli.exe`) and offers **Restart now**; the old file is removed at the next start |
-| macOS | **Download and open**: downloads and verifies the `.dmg` and opens it; quit Torno, then drag the new Torno to Applications to replace the old copy (macOS won't replace an app that is running) |
+| macOS | **Update now (restarts Torno)**: downloads and verifies the `.dmg`, closes Torno (asking about unsaved designs first), replaces `Torno.app` where it is installed, checks that the new app is signed by the same publisher and starts it; if the new copy doesn't start, the old one is put back. A copy that can't be replaced where it runs (opened from the disk image, in a folder you can't write to, or moved by macOS to a temporary place) gets **Download and open** instead, and so does any copy when you turn off **Update now replaces the app and restarts** in Preferences ▸ General (`update_replaces_app`): the disk image opens and you drag the new Torno to Applications |
 | Flatpak, Snap, `.deb`, `.rpm`, `.tar.gz` | Nothing: your package manager updates these (the window shows the command), or you unpack the new archive |
 
 Every download is verified before anything changes: its SHA-256 must match the release's
@@ -44,8 +44,9 @@ Every download is verified before anything changes: its SHA-256 must match the r
 releases, that list must carry a valid signature by Torno's release key that names the
 release (see [releasing](https://github.com/tangency-labs/solidcraft/blob/main/docs/releasing.md#update-signing)).
 A download that doesn't verify is deleted and the installed copy is left as it was; **Download**
-still gets the package for a manual install. On macOS Torno opens the disk image rather than
-replacing the app itself: you drag the new app to Applications, as you did the first time. The
+still gets the package for a manual install. On macOS the app is replaced by the same shared
+updater the other Nodalia apps use, once Torno has quit; only when it can't be replaced there does
+Torno open the disk image for you to drag the app over by hand. The
 app and the disk image are signed with a Developer ID and notarized by Apple, so macOS opens the
 new copy without a warning.
 
@@ -129,7 +130,7 @@ and Torno picks the one matching how it was installed:
 | Windows installer | under Program Files, or in the folder the installer recorded | `torno-windows-<arch>.msi` | Run the installer |
 | Windows portable | `torno-cli.exe` beside it | `torno-windows-<arch>-portable.zip` | Unzip over the old copy |
 | Windows `.exe` | anywhere else on Windows | `Torno-<version>-windows-x64.exe` | Replace the old `.exe` |
-| macOS | inside `Torno.app` | `torno-macos-universal.dmg` | Quit Torno, then drag the new app to Applications |
+| macOS | inside `Torno.app` | `torno-macos-universal.dmg` | **Update now** replaces the app and restarts; by hand, quit Torno and drag the new app to Applications |
 
 The window shows the command for Snap, `.deb` and `.rpm` installations, with a Copy button. The
 Flatpak has no network permission and Flatpak itself (or your software center) offers its
