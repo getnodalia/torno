@@ -774,7 +774,9 @@ pub fn install_method(app: &mut SolveApp) -> Option<install::Method> {
         // A copy the host can replace where it runs updates and restarts like the other apps; any
         // other macOS copy opens the disk image.
         match method {
-            Some(install::Method::Dmg) if app.services.stage_replacement.is_some() => Some(install::Method::MacApp),
+            Some(install::Method::Dmg) if app.services.stage_replacement.is_some() && app.preferences.update_replaces_app => {
+                Some(install::Method::MacApp)
+            }
             other => other,
         }
     }
@@ -1191,6 +1193,11 @@ pub fn prefs_rows(app: &mut SolveApp, ui: &mut egui::Ui) {
                 crate::scenario::publish_target("prefs:check_updates", check.rect);
             });
         }
+    }
+    // macOS: the old way (open the disk image and drag the app) stays one checkbox away.
+    if app.services.stage_replacement.is_some() && matches!(app.updater.kind(), InstallKind::MacApp(_)) {
+        let check = ui_kit::checkbox(ui, torno_ui_text::tr("update.replace_app"), &mut app.preferences.update_replaces_app);
+        crate::scenario::publish_target("prefs:update_replaces_app", check.rect);
     }
     if let Some(v) = offered_or_newer(app)
         && offered(app).is_none()

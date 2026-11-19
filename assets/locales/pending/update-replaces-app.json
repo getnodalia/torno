@@ -1,0 +1,8 @@
+{
+  "en": {
+    "update.replace_app": "Update now replaces the app and restarts (otherwise it opens the disk image)"
+  },
+  "es": {
+    "update.replace_app": "Actualizar ahora reemplaza la aplicación y se reinicia (si no, abre la imagen de disco)"
+  }
+}

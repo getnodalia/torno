@@ -1145,6 +1145,7 @@ One setting per line, sorted by name. A change that adds a setting adds its own 
 - `ui_font` (an installed font family or a font file for the interface; empty for the built-in font; a `Family-Weight.ttf` file also takes its heavier sibling files for bold text, see [interface fonts](fonts.md))
 - `ui_scale`
 - `up_axis` (`z`, `y`)
+- `update_replaces_app` (default true; [updates](book/src/guide/updates.md)). macOS: Update now replaces `Torno.app` where it runs and restarts; false gives the older behaviour, which opens the verified disk image for a manual drag.
 - `verify_opened_designs` (default false: opening a design verifies its signature and reports it, `doc.open {verify: true}`; off: opening does not read every payload again, and `file.verify` checks on request)
 - `view_confirm_corner` (default false: while a dialog or a sketch is open, a check and a cross at the view's top right, handles `view:confirm:ok` and `view:confirm:cancel`, do what the dialog's OK and Cancel do, or Finish Sketch and Cancel Sketch; the axis view or cube moves down below them, #6709)
 - `viewport_theme` (`theme` (default: the theme's own), `light`, `dark`: the 3D view in the Light or Dark theme's colours whatever the window uses, #4146)
