@@ -1797,7 +1797,7 @@
   "help.file.insert_step": "הוספת קובץ STEP, IGES, FreeCAD או Rhino לתכן כגופים מוצקים ברכיב חדש, כשחלקי הרכבה הופכים לרכיבים מקוננים. כך מייבאים מודלים מספקים או מתוכנות CAD אחרות.",
   "help.file.save_mesh": "שמירת גופים כרשת משולשים מסוג STL, 3MF או OBJ, עם רמת החלקות שנבחרה לפאות מעוקלות. כך מכינים חלקים להדפסת תלת־ממד או לתוכנות שקוראות רשתות משולשים.",
   "help.file.send_to_slicer": "שמירת הגופים שנבחרו כקובץ 3MF ופתיחתו בסלייסר שנבחר. כך עוברים מהמודל להדפסה בצעד אחד.",
-  "help.font_details": "הממשק משתמש בגופנים המובנים של egui (Ubuntu Light ו־Hack, תחת Ubuntu Font Licence ותחת רישיון MIT/Bitstream Vera; Noto Emoji וגופן סמלי האימוג'י, תחת OFL ו־MIT). טקסט בסקיצות משתמש ב־Liberation Sans (SIL OFL 1.1). חבילת הגופנים האופציונלית של Crafting Apps, craft-fonts (BIZ UDPGothic, Shippori Mincho, BIZ UDMincho, Noto Sans CJK SC, Noto Sans Arabic; SIL OFL 1.1), אינה כלולה בגרסאות של Torno.",
+  "help.font_details": "הממשק משתמש בגופנים המובנים של egui (Ubuntu Light ו־Hack, תחת Ubuntu Font Licence ותחת רישיון MIT/Bitstream Vera; Noto Emoji וגופן סמלי האימוג'י, תחת OFL ו־MIT). טקסט בסקיצות משתמש ב־Liberation Sans (SIL OFL 1.1). חבילת הגופנים האופציונלית של Nodalia, nodalia-fonts (BIZ UDPGothic, Shippori Mincho, BIZ UDMincho, Noto Sans CJK SC, Noto Sans Arabic; SIL OFL 1.1), אינה כלולה בגרסאות של Torno.",
   "help.fonts": "גופנים",
   "help.frame.end_cap": "סוגר קצוות פתוחים של איברי מסגרת בלוחות בצורת קו המתאר של הפרופיל. השתמש בו כדי לאטום צינורות, זוויתנים וקורות, מעל הקצה או שקוע בו.",
   "help.frame.member": "הצבת פרופיל, כמו צינור או פרופיל אלומיניום שחול, לאורך קווי סקיצה של מסגרת, איבר אחד לכל קו. מתאים לבניית מסגרות, מדפים ומבנים מולחמים.",

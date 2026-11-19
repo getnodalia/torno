@@ -430,7 +430,7 @@ fn scan_dir_for_font_where(dir: &std::path::Path, depth_remaining: usize, matche
 }
 
 /// The font folders named by `TORNO_FONT_DIRS` (a path list), or else by the single folder
-/// in `CRAFT_FONTS_DIR` (the craft-fonts pack).
+/// in `NODALIA_FONTS_DIR` (the nodalia-fonts pack).
 #[cfg(not(target_arch = "wasm32"))]
 fn font_override_dirs(dirs: Option<std::ffi::OsString>, pack: Option<std::ffi::OsString>) -> Vec<std::path::PathBuf> {
     match (dirs, pack) {
@@ -440,11 +440,11 @@ fn font_override_dirs(dirs: Option<std::ffi::OsString>, pack: Option<std::ffi::O
     }
 }
 
-/// Find a CJK fallback font on the local system or in TORNO_FONT_DIRS / CRAFT_FONTS_DIR.
+/// Find a CJK fallback font on the local system or in TORNO_FONT_DIRS / NODALIA_FONTS_DIR.
 #[cfg(not(target_arch = "wasm32"))]
 fn find_system_cjk_font() -> Option<Vec<u8>> {
     // 1. Check the font folders the user named.
-    for dir in font_override_dirs(std::env::var_os("TORNO_FONT_DIRS"), std::env::var_os("CRAFT_FONTS_DIR")) {
+    for dir in font_override_dirs(std::env::var_os("TORNO_FONT_DIRS"), std::env::var_os("NODALIA_FONTS_DIR")) {
         let names = ["BIZUDPGothic-Regular.ttf", "BIZ-UDGothicR.ttc", "NotoSansCJK-Regular.ttc", "NotoSansJP-Regular.ttf"];
         for name in names {
             if let Some(bytes) = try_read_font(&dir.join(name)) {
@@ -709,11 +709,11 @@ fn find_chinese_font_in(dirs: &[std::path::PathBuf]) -> Option<Vec<u8>> {
     dirs.iter().find_map(|dir| scan_dir_for_font_where(dir, 3, is_chinese_font_name, draws_simplified_chinese))
 }
 
-/// The first Arabic font in `CRAFT_FONTS_DIR` (`NotoSansArabic-Regular.ttf`) or the candidate
+/// The first Arabic font in `NODALIA_FONTS_DIR` (`NotoSansArabic-Regular.ttf`) or the candidate
 /// paths that draws Arabic.
 #[cfg(not(target_arch = "wasm32"))]
 fn arabic_font() -> Option<Vec<u8>> {
-    let pack = std::env::var("CRAFT_FONTS_DIR").ok().map(|dir| std::path::PathBuf::from(dir).join("NotoSansArabic-Regular.ttf"));
+    let pack = std::env::var("NODALIA_FONTS_DIR").ok().map(|dir| std::path::PathBuf::from(dir).join("NotoSansArabic-Regular.ttf"));
     pack.into_iter()
         .chain(ARABIC_FONT_CANDIDATES.iter().map(std::path::PathBuf::from))
         .find_map(|path| try_read_font(&path).filter(|bytes| covers(bytes, 'ب')))
@@ -788,7 +788,7 @@ mod tests {
     use crate::ui_kit::type_face::{RichTextExt as _, SYMBOL_FALLBACK, bold, medium, semibold};
     use egui::{FontId, RichText};
 
-    /// `TORNO_FONT_DIRS` wins and may list several folders; `CRAFT_FONTS_DIR` is the fallback.
+    /// `TORNO_FONT_DIRS` wins and may list several folders; `NODALIA_FONTS_DIR` is the fallback.
     #[cfg(not(target_arch = "wasm32"))]
     #[test]
     fn cjk_font_folders_from_the_environment() -> Result<(), std::env::JoinPathsError> {
@@ -1285,7 +1285,7 @@ mod tests {
 
     #[test]
     fn web_chinese_subset_draws_simplified_settings() {
-        let bytes = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets/fonts/craft-ui-sc/CraftUI-SC.otf")).to_vec();
+        let bytes = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets/fonts/nodalia-ui-sc/CraftUI-SC.otf")).to_vec();
         let ctx = test_context();
         assert!(install_web_script_fonts(&ctx, None, Some(bytes), "zh"));
         let installed = ctx.data(|d| d.get_temp::<FontDefinitions>(installed_fonts_id())).unwrap();

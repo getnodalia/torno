@@ -175,10 +175,10 @@ fn render(root: &Path, crates: &[Crate]) -> String {
          - BIZUDPGothic-Regular.ttf (assets/fonts/biz-udp-gothic/BIZUDPGothic-Regular.ttf)\n  \
            Copyright 2022 The BIZ UDGothic Project Authors (https://github.com/googlefonts/morisawa-biz-ud-mincho)\n  \
            Source: https://github.com/googlefonts/morisawa-biz-ud-gothic\n\n\
-         - CraftUI-SC.otf (assets/fonts/craft-ui-sc/CraftUI-SC.otf)\n  \
+         - CraftUI-SC.otf (assets/fonts/nodalia-ui-sc/CraftUI-SC.otf)\n  \
            Copyright 2014-2021 Adobe / Google Inc. (Noto Sans SC subset for Torno web zh)\n  \
            Source: https://github.com/notofonts/noto-cjk (Sans SubsetOTF/SC)\n\n\
-         - CraftUI-TC.otf (assets/fonts/craft-ui-tc/CraftUI-TC.otf)\n  \
+         - CraftUI-TC.otf (assets/fonts/nodalia-ui-tc/CraftUI-TC.otf)\n  \
            Copyright 2014-2021 Adobe / Google Inc. (Noto Sans TC subset for Torno web zh-TW)\n  \
            Source: https://github.com/notofonts/noto-cjk (Sans SubsetOTF/TC)\n\n\
          - IBMPlexSans-Variable.ttf (crates/look/fonts/ibm-plex-sans/IBMPlexSans-Variable.ttf)\n  \

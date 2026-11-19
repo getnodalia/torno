@@ -1797,7 +1797,7 @@
   "help.file.insert_step": "يضيف ملف STEP أو IGES أو FreeCAD أو Rhino إلى التصميم كأجسام صلبة في مكوّن جديد، وتصبح قطع التجميع مكوّنات متداخلة. استخدمه لاستيراد نماذج من المورّدين أو برامج CAD الأخرى.",
   "help.file.save_mesh": "يحفظ الأجسام كشبكة STL أو 3MF أو OBJ بدرجة نعومة الوجوه المنحنية التي تختارها. استخدمه لتجهيز القطع للطباعة ثلاثية الأبعاد أو للبرامج التي تقرأ الشبكات.",
   "help.file.send_to_slicer": "يحفظ الأجسام المحددة في ملف 3MF ويفتحه في برنامج التقطيع الذي تختاره. استخدمه للانتقال من النموذج إلى الطباعة بخطوة واحدة.",
-  "help.font_details": "تستخدم الواجهة خطوط egui المدمجة (Ubuntu Light وHack، بموجب رخصة Ubuntu Font ورخصة MIT/Bitstream Vera، وNoto Emoji وخط أيقونات الرموز التعبيرية بموجب OFL وMIT). يستخدم نص الرسم خط Liberation Sans (SIL OFL 1.1). حزمة الخطوط الاختيارية craft-fonts لتطبيقات Crafting (BIZ UDPGothic وShippori Mincho وBIZ UDMincho وNoto Sans CJK SC وNoto Sans Arabic، بموجب SIL OFL 1.1) غير مضمّنة في إصدارات Torno.",
+  "help.font_details": "تستخدم الواجهة خطوط egui المدمجة (Ubuntu Light وHack، بموجب رخصة Ubuntu Font ورخصة MIT/Bitstream Vera، وNoto Emoji وخط أيقونات الرموز التعبيرية بموجب OFL وMIT). يستخدم نص الرسم خط Liberation Sans (SIL OFL 1.1). حزمة الخطوط الاختيارية nodalia-fonts لتطبيقات Crafting (BIZ UDPGothic وShippori Mincho وBIZ UDMincho وNoto Sans CJK SC وNoto Sans Arabic، بموجب SIL OFL 1.1) غير مضمّنة في إصدارات Torno.",
   "help.fonts": "الخطوط",
   "help.frame.end_cap": "يغلق الأطراف المفتوحة لأعضاء الإطار بألواح على شكل محيط المقطع. استخدمه لسد الأنابيب والزوايا والعوارض، فوق الطرف أو مغروسًا فيه.",
   "help.frame.member": "يضع مقطعًا، مثل أنبوب أو قطاع ألومنيوم مبثوق، على امتداد خطوط رسم هيكل، بعنصر واحد لكل خط. استخدمه لبناء الهياكل والرفوف والمنشآت الملحومة.",
