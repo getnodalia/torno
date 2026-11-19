@@ -2004,7 +2004,7 @@
     "thread.form_rp": "Rør Rp (ISO 7-1)",
     "ui.addToQuickAccess": "Føj til Hurtig adgang",
     "ui.agent_chat_node_too_old": "Node.js {version} er for gammel til denne agent. Installér Node.js 20.10 eller nyere, og tryk derefter på Opdater.",
-    "ui.agent_chat_snap_none_found": "Der blev ikke fundet nogen kodningsagent. Snap-pakken er indesluttet, så den kan ikke se eller starte de kodningsagenter, der er installeret på denne computer. Installér i stedet Torno fra AppImage-, .deb- eller .rpm-pakken for at bruge dem.",
+    "ui.agent_chat_snap_none_found": "Der blev ikke fundet nogen kodningsagent. Snap-pakken er indesluttet, så den kan ikke se eller starte de kodningsagenter, der er installeret på denne computer. Installér i stedet Torno fra AppImage-, .deb- eller .rpm-pakken for at bruge dem. En agent, der bruger en OpenAI-kompatibel API, fungerer også i Snap-pakken: opsæt en med Tilføj agent.",
     "ui.chamfer_angle": "Affasningsvinkel",
     "ui.chamfer_depth": "Affasningsdybde",
     "ui.close_tab": "Luk fane",
