@@ -232,7 +232,12 @@ pub fn app_bar(app: &mut SolveApp, ui: &mut egui::Ui) {
         // or the caption buttons take its ends. In full screen macOS shows the traffic lights in
         // its own title bar that slides down over the window, not in the bar: no room for them.
         let fullscreen = ui.ctx().input(|i| i.viewport().fullscreen.unwrap_or(false));
-        let chrome = crate::window_chrome::TitleBar { traffic_lights: app.integrated_titlebar && !fullscreen, caption_buttons: app.custom_titlebar };
+        let chrome = crate::window_chrome::TitleBar {
+            traffic_lights: app.integrated_titlebar && !fullscreen,
+            caption_buttons: app.custom_titlebar,
+            // The desktop's side for its window buttons: the left on some Linux desktops.
+            captions_left: crate::window_chrome::system_captions_left(),
+        };
         let action = chrome.show(ui, r, |ui, content| {
             // While a file loads the design waits: no menus or commands from the bar.
             let idle = !app.file_load_holds();
