@@ -841,6 +841,88 @@ Original Torno drawings, Open for owner review; no runtime assignments.
 | docs/nodalia/torno-preferences.png | Torno contributors | Screenshot of Torno's Preferences window on the Graphics page, captured from the app | MIT OR Apache-2.0 |
 | crates/look/icons/design/tools/author/import_ndl.py | Torno contributors | original tool that imports the shared Nodalia Design volumetric icons into Torno's masters | MIT OR Apache-2.0 |
 | crates/look/icons/design/tools/author/import_ndl_flat.py | Torno contributors | original tool that redraws Torno's flat interface masters from the Nodalia Design icon set | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/flat/find_kinds.svg | Nathan-Dane (Torno contributor) | original icon master (64 grid), the Browser search's kind filter from the contributor's compact search design (#1634) | SolidCraft Brand and Interface Licence (LICENSE-BRAND) |
+| crates/look/icons/design/svg/model/drawing_auto_balloon.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_chamfer_note.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_dimension_chain.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_dimension_suggest.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_dimension_tidy.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_gdt.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_hatch.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_issue_revision.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_model_dimensions.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_note.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_parts_renumber.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_replace_model.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_revision_tag.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_sheet_sketch.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_surface_texture.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_view_auxiliary.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_view_break.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_view_copy_to_sheet.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_view_draft.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_view_flat_pattern.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_view_move_to_sheet.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_view_pictorial.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_weld.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| assets/fonts/noto-sans-arabic/NotoSansArabic-Regular.ttf | The Noto Project Authors (Noto Sans Arabic 2.013, hinted) | https://github.com/notofonts/notofonts.github.io (fonts/NotoSansArabic/hinted/ttf), unmodified; licence text in assets/fonts/noto-sans-arabic/OFL.txt; the web app's font for a drawing's Arabic text | SIL OFL 1.1 |
+| assets/fonts/noto-sans-arabic/OFL.txt | The Noto Project Authors | Unmodified accompanying font licence (https://github.com/notofonts/arabic) | SIL OFL 1.1 |
+| assets/fonts/noto-sans-kr/NotoSansKR-Regular.otf | Adobe (Noto Sans KR 2.004, Noto Sans CJK subset) | https://github.com/notofonts/noto-cjk (Sans/SubsetOTF/KR), unmodified; licence text in assets/fonts/noto-sans-kr/OFL.txt; the web app's font for a drawing's Korean text | SIL OFL 1.1 |
+| assets/fonts/noto-sans-kr/OFL.txt | Adobe | Unmodified accompanying font licence (https://github.com/notofonts/noto-cjk, Sans/LICENSE) | SIL OFL 1.1 |
+| assets/fonts/noto-sans-sc/NotoSansSC-Regular.otf | Adobe (Noto Sans SC 2.004, Noto Sans CJK subset) | https://github.com/notofonts/noto-cjk (Sans/SubsetOTF/SC), unmodified; licence text in assets/fonts/noto-sans-sc/OFL.txt; the web app's font for a drawing's simplified Chinese text | SIL OFL 1.1 |
+| assets/fonts/noto-sans-sc/OFL.txt | Adobe | Unmodified accompanying font licence (https://github.com/notofonts/noto-cjk, Sans/LICENSE) | SIL OFL 1.1 |
+| assets/fonts/noto-sans-tc/NotoSansTC-Regular.otf | Adobe (Noto Sans TC 2.004, Noto Sans CJK subset) | https://github.com/notofonts/noto-cjk (Sans/SubsetOTF/TC), unmodified; licence text in assets/fonts/noto-sans-tc/OFL.txt; the web app's font for a drawing's traditional Chinese text | SIL OFL 1.1 |
+| assets/fonts/noto-sans-tc/OFL.txt | Adobe | Unmodified accompanying font licence (https://github.com/notofonts/noto-cjk, Sans/LICENSE) | SIL OFL 1.1 |
+| crates/look/icons/design/svg/model/drawing_base_view.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_projected_view.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_section_view.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_detail_view.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_align_views.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_image.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_dimension.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_hole_callout.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_leader.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_datum.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_centre_mark.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_align_annotations.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_space_annotations.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_parts_list.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_balloon.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_edit_table.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_revision_table.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_update.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_check.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_revision.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_print.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/drawing_resources.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| assets/locales/pending/ka-catch-up-2.json | Davit Matchakhelidze (devius) | Original Georgian translation of Torno's English strings, written with Claude Code from the meaning of each English string; terminology and doubtful strings decided by a native Georgian speaker; no commercial CAD text used | MIT OR Apache-2.0 |
+| assets/locales/pending/ka-catch-up-ui.json | Davit Matchakhelidze (devius) | Original Georgian translation of Torno's English strings, written with Claude Code from the meaning of each English string; terminology and doubtful strings decided by a native Georgian speaker; no commercial CAD text used | MIT OR Apache-2.0 |
+| tests/step-regressions/block_edge_off_its_face.step | Torno contributors | written entity by entity from formulas (a block whose edge curve lies 2 um off its face); import regression fixture | MIT OR Apache-2.0 |
+| tests/step-regressions/hole_round_revolved.step | Torno contributors | exported by Torno 0.30.1 from public commands (a 30 x 30 x 10 block, a 14 mm hole, a 1 mm round on its top edge), inserted and exported again; import regression fixture | MIT OR Apache-2.0 |
+| tests/step-regressions/torus_patch_and_rest.step | Torno contributors | exported by Torno 0.30.1 from public commands (solid.torus R 12, r 2); import regression fixture | MIT OR Apache-2.0 |
+| tests/step-regressions/torus_patch_and_rest_revolved.step | Torno contributors | exported by Torno 0.30.1 from public commands (torus_patch_and_rest.step inserted and exported again); import regression fixture | MIT OR Apache-2.0 |
+| assets/fonts/craft-ui-kr/CraftUI-KR.otf | Adobe / Google Inc. (Noto Sans KR); Torno subset | https://github.com/notofonts/noto-cjk Sans/SubsetOTF/KR Regular, glyph-subset for the Hangul syllable block and renamed Craft UI KR (OFL reserved-name); licence text in assets/fonts/craft-ui-kr/OFL.txt; web UI Korean | SIL OFL 1.1 |
+| assets/fonts/craft-ui-kr/OFL.txt | Adobe / Google Inc. (Noto CJK); Torno header | Accompanying OFL for CraftUI-KR.otf | SIL OFL 1.1 |
+| crates/io/src/native_cad/fixtures/bracket.FCStd | Torno contributors | original test part (a padded sketch, a pocketed hole and filleted edges) saved by FreeCAD 26.3 from conda-forge run as an external program (`make_bracket_fcstd.py` beside it); no third-party geometry | MIT OR Apache-2.0 |
+| crates/io/src/native_cad/fixtures/knob.FCStd | Torno contributors | original test part (a revolved sketch, a groove and a chamfer in a placed body) saved by FreeCAD 26.3 from conda-forge run as an external program (`make_knob_fcstd.py` beside it); no third-party geometry | MIT OR Apache-2.0 |
+| crates/io/src/native_cad/fixtures/plate.FCStd | Torno contributors | original test part (a padded sketch with holes, a mirrored slot, polar and linear patterns, a binder and fillets) saved from FreeCAD 26.3's window (offscreen) from conda-forge run as an external program (`make_plate_fcstd.py` beside it); no third-party geometry | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/flat/briefcase.svg | Torno contributors | original icon master (64 grid) | SolidCraft Brand and Interface Licence (LICENSE-BRAND) |
+| crates/look/icons/design/svg/flat/document_browser.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/flat/panel_dock_bottom.svg | Torno contributors | original flat panel menu icon master (64 grid) | SolidCraft Brand and Interface Licence (LICENSE-BRAND) |
+| crates/look/icons/design/svg/flat/panel_dock_left.svg | Torno contributors | original flat panel menu icon master (64 grid) | SolidCraft Brand and Interface Licence (LICENSE-BRAND) |
+| crates/look/icons/design/svg/flat/panel_dock_right.svg | Torno contributors | original flat panel menu icon master (64 grid) | SolidCraft Brand and Interface Licence (LICENSE-BRAND) |
+| crates/look/icons/design/svg/flat/panel_float.svg | Torno contributors | original flat panel menu icon master (64 grid) | SolidCraft Brand and Interface Licence (LICENSE-BRAND) |
+| crates/look/icons/design/svg/flat/panel_popout.svg | Torno contributors | original flat panel menu icon master (64 grid) | SolidCraft Brand and Interface Licence (LICENSE-BRAND) |
+| crates/look/icons/design/svg/flat/panel_reset_height.svg | Torno contributors | original flat panel menu icon master (64 grid) | SolidCraft Brand and Interface Licence (LICENSE-BRAND) |
+| crates/look/icons/design/svg/flat/refresh.svg | Torno contributors | original monochrome reload icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/airfoil.svg | Torno contributors | two-tone modelling icon master (64 grid), original Torno artwork | SolidCraft Brand and Interface Licence (LICENSE-BRAND) |
+| crates/look/icons/design/svg/model/constrain.svg | Torno contributors | two-tone modelling icon master (64 grid), original Torno artwork | SolidCraft Brand and Interface Licence (LICENSE-BRAND) |
+| crates/look/icons/design/svg/model/insert_mesh.svg | Torno contributors | original icon master (64 grid) | MIT OR Apache-2.0 |
+| crates/look/icons/design/svg/model/plane_auto.svg | Torno contributors | original construction icon master (64 grid) | SolidCraft Brand and Interface Licence (LICENSE-BRAND) |
+| tests/step-regressions/cylinder_rim_off_its_wall.step | Torno contributors | written entity by entity from formulas (a cylinder whose upper rim lies 0.2 um outside its wall); import regression fixture | MIT OR Apache-2.0 |
+| tests/step-regressions/cylinder_spline_rims.step | Torno contributors | written entity by entity from formulas (a cylinder whose rims are splines of two half circles); import regression fixture | MIT OR Apache-2.0 |
+| tests/step-regressions/thread_crest_band.step | Torno contributors | written entity by entity from formulas (a cylinder face round a helical groove two turns long); import regression fixture | MIT OR Apache-2.0 |
+| tests/step-regressions/tiny_rounds_coarse_tolerance.step | Torno contributors | written entity by entity from formulas (a 0.05 mm quarter round, corner ball and quarter torus in a file of 0.1 mm uncertainty); import regression fixture | MIT OR Apache-2.0 |
 
 ## Code adapted from sibling projects
 
