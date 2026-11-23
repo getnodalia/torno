@@ -15,6 +15,7 @@ solidcore-record = { workspace = true }
 solidcore-tess = { workspace = true }
 torno-color = { workspace = true }
 torno-geom = { workspace = true }
+torno-develop = { workspace = true }
 torno-sketch = { workspace = true }
 torno-kernel = { workspace = true }
 torno-profile = { workspace = true }

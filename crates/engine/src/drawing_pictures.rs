@@ -13,7 +13,6 @@ use std::cell::OnceCell;
 use std::collections::{BTreeMap, BTreeSet};
 
 use solidcore_record::Vec2;
-use torno_doc::canvas::base64_decode;
 use torno_doc::drawing::Drawing;
 use torno_doc::drawing::image::{ImageFile, SheetImage};
 use torno_doc::ids;
@@ -121,8 +120,7 @@ impl<'a> Provider<'a> {
 }
 
 fn decode(file: &ImageFile) -> Decoded {
-    let bytes = base64_decode(&file.data).ok_or("its file isn't base64")?;
-    sheet_image::SheetImage::decode(&bytes)
+    sheet_image::SheetImage::decode(file.data.as_bytes())
 }
 
 impl Pictures for Provider<'_> {

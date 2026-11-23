@@ -32,7 +32,6 @@ fn kernel(torno: bool) -> Kernel {
     let mut k = Kernel::default();
     if torno {
         k.fixes = UpstreamFixes::all();
-        k.fixes.fillet_refuse_rounds_breaking_through = false;
     }
     k
 }

@@ -182,7 +182,7 @@ fn assert_sound(k: &mut Kernel, mut wall: Brep, label: &str) {
     );
 }
 
-/// Torno's fixes (`kernel_cases/fixes.json`): the same sound body, with loop-gap closure unconditional.
+/// Torno's fixes (`support/torno_fixes.rs`): the same sound body, with loop-gap closure unconditional.
 #[test]
 fn torno_fixes_shell_the_square_to_circle_loft() {
     let (mut k, result) = shell(&torno_fixes(), true);

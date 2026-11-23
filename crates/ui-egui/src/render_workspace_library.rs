@@ -2313,7 +2313,7 @@ mod studio_browser_tests {
             assert_eq!(h.app.session.doc, before);
             h.app.run("edit.redo", json!({})).unwrap();
             assert_eq!(h.app.session.doc, saved);
-            let reopened = torno_engine::doc::Document::from_json(&saved.to_json()).unwrap();
+            let reopened = torno_engine::io::read_design(&torno_engine::io::write_design_container(&saved).unwrap()).unwrap();
             h.app.session = torno_engine::Session::new(reopened);
             h.app.session.set_render_job_host(Some(host.clone())).unwrap();
             super::super::reset_document(&mut h.app);

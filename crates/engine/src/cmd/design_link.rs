@@ -474,7 +474,7 @@ mod tests {
     fn reading_a_linked_design_reports_its_state_and_reason() {
         let dir = folder("read");
         let good = dir.join("plate.sc");
-        std::fs::write(&good, torno_io::write_design(&Document::new("plate"))).unwrap();
+        std::fs::write(&good, torno_io::write_design(&Document::new("plate")).unwrap()).unwrap();
         let read = read_linked_file(&good, None).map(|bytes| torno_io::read_design(&bytes).map(|d| d.name).ok());
         assert_eq!(read, Ok(Some("plate".to_string())));
         assert_eq!(link_presence(&good, None), None);
@@ -489,7 +489,7 @@ mod tests {
         std::fs::create_dir_all(dir.join("folder.sc")).unwrap();
         assert!(matches!(state(&dir.join("folder.sc")), Some((LinkState::Unreadable, _))));
         // A design a newer Torno saved is read like any other, and opens saying so (#12166).
-        let mut newer: serde_json::Value = serde_json::from_slice(&torno_io::write_design(&Document::new("next"))).unwrap();
+        let mut newer: serde_json::Value = serde_json::from_slice(&torno_io::write_design(&Document::new("next")).unwrap()).unwrap();
         newer["format"] = serde_json::json!(torno_doc::format::format_string(torno_doc::format::FORMAT + 1));
         std::fs::write(dir.join("next.sc"), newer.to_string()).unwrap();
         let opened = read_linked_file(&dir.join("next.sc"), None).map(|bytes| torno_io::read_design(&bytes).map(|d| d.newer_file.is_some()).ok());

@@ -46,12 +46,10 @@ const SLOT_BAR: &[u8] = include_bytes!("data/issue_2364_torno_3369_slot_bar.smb"
 const PLATE: &[u8] = include_bytes!("data/issue_2364_torno_5158_plate.smb");
 const NOTCHED: &[u8] = include_bytes!("data/issue_2364_torno_1080_notched_block.smb");
 
-/// Torno's rig set at the time (#2364's check): every fix but those it leaves off.
+/// Torno's rig set: every fix.
 fn kernel() -> Kernel {
-    let mut f = UpstreamFixes::all();
-    f.fillet_refuse_rounds_breaking_through = false;
     Kernel {
-        fixes: f,
+        fixes: UpstreamFixes::all(),
         ..Kernel::default()
     }
 }

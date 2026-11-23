@@ -175,6 +175,7 @@ fn a_rebuilt_history_that_cannot_be_inserted_falls_back_to_solids() {
         link_faces: Vec::new(),
         link_threads: Vec::new(),
         touching: torno_doc::Touching::Separate,
+        profile_frame: None,
         kind: torno_doc::FeatureKind::Sketch { plane: torno_doc::PlaneRef::Origin { name: "XY".into() }, sketch: torno_doc::sketch::Sketch::new() },
     };
     // Room for the file's one Import feature, but not for the five features of its history.

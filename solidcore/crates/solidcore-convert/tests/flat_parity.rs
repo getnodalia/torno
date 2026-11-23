@@ -18,6 +18,9 @@
     clippy::print_stderr
 )] // test
 
+#[path = "../../solidcore/tests/support/torno_fixes.rs"]
+mod torno_fixes;
+
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 use std::io::Read as _;
@@ -306,14 +309,7 @@ fn one(name: &str, record: &Record, trusted: bool, fixes: &UpstreamFixes, t: &mu
 }
 
 fn fixes() -> UpstreamFixes {
-    let fixes_json: Value =
-        serde_json::from_str(&std::fs::read_to_string(corpus().join("fixes.json")).unwrap())
-            .unwrap();
-    let mut fixes = UpstreamFixes::default();
-    for flag in fixes_json.as_array().unwrap() {
-        *fixes.flag_mut(flag.as_str().unwrap()).unwrap() = true;
-    }
-    fixes
+    torno_fixes::torno_fixes()
 }
 
 const LABEL: [&str; 6] = [

@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use torno_doc::canvas::base64_decode;
 
 use serde_json::{Value, json};
 use torno_geom::paper::Scene;

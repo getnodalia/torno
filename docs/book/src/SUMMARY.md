@@ -19,7 +19,7 @@
 - [Keyboard shortcuts](guide/shortcuts.md)
 - [Updates and privacy](guide/updates.md)
 - [Managing Torno in an organization](guide/managed-deployment.md)
-- [Code signing policy](code-signing-policy.md)
+- [Code signing and privacy](code-signing-policy.md)
 - [Troubleshooting: Torno won't start](guide/troubleshooting.md)
 - [Driving Torno with an AI agent (MCP)](guide/mcp.md)
 - [Agent chat](guide/agent-chat.md)

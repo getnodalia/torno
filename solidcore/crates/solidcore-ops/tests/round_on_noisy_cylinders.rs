@@ -15,6 +15,9 @@
     clippy::disallowed_methods
 )] // test
 
+#[path = "../../solidcore/tests/support/torno_fixes.rs"]
+mod torno_fixes;
+
 mod common;
 
 use common::{kernel_copy, rel, volume};
@@ -108,11 +111,7 @@ fn exact_wedge() -> Body {
 
 #[test]
 fn rounds_as_the_exact_wedge_does() {
-    let fixes: Vec<String> = serde_json::from_str(include_str!(
-        "../../solidcore/tests/kernel_cases/fixes.json"
-    ))
-    .unwrap();
-    session::set_thread_fixes(fixes.iter().map(String::as_str)).unwrap();
+    session::set_thread_fixes(torno_fixes::torno_fix_names()).unwrap();
     let record: Record =
         serde_json::from_str(include_str!("data/raked_wedge_noisy_cylinders.json")).unwrap();
     let (noisy, _) = Body::from_record(&record, true).unwrap();

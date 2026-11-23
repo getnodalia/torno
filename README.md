@@ -59,9 +59,8 @@
 
 ARM64 and 32-bit builds, portable zip, .deb, .rpm, Flatpak and the other packages are on the
 [downloads page](docs/downloads.md). The macOS app is signed with a Developer ID and notarized by
-Apple. Windows signing: free code signing provided by SignPath.io, certificate by SignPath
-Foundation ([code signing policy](https://getnodalia.github.io/torno/code-signing-policy.html)). Until the
-production certificate is in place, SmartScreen may warn: choose **More info**, then **Run anyway**. On Torno 0.11 to 0.14, download once by hand; see
+Apple. The Windows files are unsigned for now ([code signing and privacy](https://getnodalia.github.io/torno/code-signing-policy.html)),
+so SmartScreen may warn: choose **More info**, then **Run anyway**. On Torno 0.11 to 0.14, download once by hand; see
 [updating](https://getnodalia.github.io/torno/guide/updates.html#updating-from-011-to-014).
 
 ## What works

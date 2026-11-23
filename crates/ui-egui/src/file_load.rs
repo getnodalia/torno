@@ -114,6 +114,9 @@ pub struct Request {
     pub(crate) auto_verify: bool,
     /// Open the file with an importer plugin (`file.import`) even when Torno reads it too.
     pub plugin_import: bool,
+    /// An export written to be printed: once written it opens in the system's PDF viewer
+    /// ([`crate::drawing_workspace::print::written`]).
+    pub print: bool,
 }
 
 impl Request {
@@ -136,6 +139,7 @@ impl Request {
             tries: 0,
             auto_verify: false,
             plugin_import: false,
+            print: false,
         }
     }
     /// It adds what it reads to the active design.
@@ -167,6 +171,8 @@ impl Request {
             Kind::InsertDesign => ("component.insert_design", self.params()),
             Kind::Recover { id, dir } => ("doc.recover", json!({"id": id, "dir": dir})),
             Kind::ExportDxf => ("file.export_view_dxf", Value::Object(self.options.clone())),
+            // Printing writes the whole drawing's PDF that asks for actual size.
+            Kind::ExportSheet if self.print => ("drawing.print", Value::Object(self.options.clone())),
             Kind::ExportSheet => ("drawing.export", Value::Object(self.options.clone())),
             Kind::UpdateLinks => ("component.update_links", Value::Object(self.options.clone())),
             Kind::ReloadCloud => ("pointcloud.reload", Value::Object(self.options.clone())),
@@ -269,8 +275,8 @@ const STAGED_THUMBNAIL_TRIANGLES: usize = 1_000_000;
 /// How long a frame spends on a staged STEP import.
 const STAGED_FRAME_MS: f64 = 30.0;
 
-/// Files read in stages: STEP (not IGES, FreeCAD or Rhino, which are first restated as STEP) to
-/// insert or open, and designs to open (#10198).
+/// Files read in stages: STEP to insert or open (not IGES, FreeCAD or Rhino, which are first
+/// restated as STEP), by the reader the request names, and designs to open (#10198).
 #[cfg_attr(not(target_arch = "wasm32"), allow(dead_code))]
 fn staged_kind(request: &Request) -> bool {
     let p = &request.path;
@@ -279,6 +285,14 @@ fn staged_kind(request: &Request) -> bool {
         && !torno_engine::io::is_iges_path(p)
         && !torno_engine::io::is_native_cad_path(p);
     step || (request.kind == Kind::Open && torno_engine::io::is_design_path(p))
+}
+
+/// The request reads its STEP file with cadmpeg (`reader: cadmpeg`), which has no STEP text for
+/// Torno's reader to read a piece per frame: staged, its command reads the file in one
+/// frame, after the overlay is shown and while Cancel can still stop it, and its bodies are
+/// meshed over frames after, as any staged import's are.
+fn cadmpeg_reads(request: &Request) -> bool {
+    request.options.get("reader").and_then(Value::as_str).and_then(torno_engine::io::StepReader::parse) == Some(torno_engine::io::StepReader::Cadmpeg)
 }
 
 impl Running {
@@ -515,15 +529,19 @@ fn default_reuse_import(app: &SolveApp, request: &mut Request) {
 }
 
 /// Import options the preferences add for `path` (with `history: solids` a FreeCAD file brings
-/// only its solids, as before its history was rebuilt; with `reader: cadmpeg` a FreeCAD or Rhino
-/// file's solids are read from cadmpeg's model straight into records).
+/// only its solids, as before its history was rebuilt; with `reader: cadmpeg` a STEP, FreeCAD or
+/// Rhino file is read by cadmpeg straight into records).
 pub(crate) fn preferred_options(app: &SolveApp, path: &str) -> serde_json::Map<String, Value> {
     let mut out = serde_json::Map::new();
     let freecad = std::path::Path::new(path).extension().and_then(|e| e.to_str()).is_some_and(|e| e.eq_ignore_ascii_case("fcstd"));
     if freecad && !app.preferences.freecad_history {
         out.insert("history".into(), json!("solids"));
     }
-    if torno_engine::io::is_native_cad_path(path) && app.preferences.cadmpeg_import {
+    let step = std::path::Path::new(path)
+        .extension()
+        .and_then(|e| e.to_str())
+        .is_some_and(|e| e.eq_ignore_ascii_case("step") || e.eq_ignore_ascii_case("stp"));
+    if (step || torno_engine::io::is_native_cad_path(path)) && app.preferences.cadmpeg_import {
         out.insert("reader".into(), json!("cadmpeg"));
     }
     out
@@ -568,10 +586,8 @@ pub fn begin_request(app: &mut SolveApp, mut request: Request) -> Result<(), Str
                 let (command, params) = request.command();
                 app.run(command, params)
             }
-            Kind::Insert => {
-                app.insert_path_with(&request.path, &request.options, request.mesh);
-                Ok(Value::Null)
-            }
+            // A failed import is the request's answer, as a staged one's is.
+            Kind::Insert => app.insert_path_with(&request.path, &request.options, request.mesh).map(|()| Value::Null),
             Kind::InsertDesign => {
                 let (command, params) = request.command();
                 let r = torno_engine::io::vfs::allowing_hosts(&request.allow_hosts, || app.run(command, params));
@@ -589,10 +605,10 @@ pub fn begin_request(app: &mut SolveApp, mut request: Request) -> Result<(), Str
                 r
             }
             Kind::Open => {
-                app.open_path_with(&request.path, &request.options);
+                let r = app.open_path_with(&request.path, &request.options);
                 // Opened in place of the blank tab it made, with no switch to it.
                 crate::edit_in_place::attach(app);
-                Ok(Value::Null)
+                r.map(|()| Value::Null)
             }
             Kind::Recover { .. } => {
                 let (command, params) = request.command();
@@ -761,6 +777,7 @@ pub fn control(app: &mut SolveApp, req: crate::control::ControlRequest) -> Optio
         tries: 0,
         auto_verify: false,
         plugin_import: id == "file.import",
+        print: false,
     };
     let _ = begin_request(app, request);
     None
@@ -1064,7 +1081,8 @@ fn start_staged(app: &mut SolveApp) {
 
 /// One frame of a staged STEP import: parse the file, or convert solids for a frame's worth of
 /// time, or, once every solid is in, run the command (which finds the file read) and hand its
-/// result to [`tick`] as a worker would.
+/// result to [`tick`] as a worker would. A file cadmpeg reads runs its command in one frame
+/// ([`cadmpeg_reads`]).
 fn step_staged(running: &mut Running) {
     let Some(staged) = running.staged.as_mut() else { return };
     let progress = running.progress.clone();
@@ -1116,6 +1134,23 @@ fn step_staged(running: &mut Running) {
                 staged.ran = Some(result);
             }
             Some(Err(e)) => send(staged, Err(e)),
+        }
+        return;
+    }
+    if cadmpeg_reads(&running.request) {
+        let Some(mut session) = staged.session.take() else { return };
+        let (command, params) = (staged.command, staged.params.clone());
+        let result =
+            torno_engine::io::vfs::scoped(scope, || torno_engine::doc::progress::watch(progress.clone(), || session.execute(command, &params)));
+        match result {
+            _ if progress.is_cancelled() => send(staged, Err("file operation cancelled".into())),
+            Ok(result) => {
+                // Next frames: the meshes ("Preparing the view").
+                running.phase.store(1, Ordering::Relaxed);
+                staged.session = Some(session);
+                staged.ran = Some(result);
+            }
+            Err(e) => send(staged, Err(e.to_string())),
         }
         return;
     }
@@ -1677,6 +1712,10 @@ fn land_now(app: &mut SolveApp, mut running: Running) {
     {
         let request = &running.request;
         match job {
+            Ok(made) if request.kind.exports() && request.print => {
+                crate::drawing_workspace::print::written(app, &request.path);
+                request.answer(Ok(made.result));
+            }
             Ok(made) if request.kind.exports() => {
                 if !request.path.is_empty() {
                     app.set_status(torno_ui_text::format("ui.saved_to", &[("path", &request.path)]), false);
@@ -1687,9 +1726,14 @@ fn land_now(app: &mut SolveApp, mut running: Running) {
                 outcome = Outcome::Cancelled;
                 request.answer(Err("file operation cancelled".into()));
             }
-            Ok(made) if request.reads_again() && running.matches(&app.session) => {
+            Ok(made) if request.reads_again() && running.matches(&app.session) => 'reload: {
                 let (id, _) = request.command();
-                app.session.accept_computed(made.session);
+                if let Err(error) = app.session.accept_computed(made.session) {
+                    let error = error.to_string();
+                    app.set_status(error.clone(), true);
+                    request.answer(Err(error));
+                    break 'reload;
+                }
                 app.big_operation = true;
                 if request.kind == Kind::UpdateLinks {
                     crate::linked_source::read_again(app, &request.options, &made.result);
@@ -1703,7 +1747,7 @@ fn land_now(app: &mut SolveApp, mut running: Running) {
                     panel.depth = app.session.undo.len();
                 }
                 let language = torno_ui_text::Locale::for_language(&app.preferences.language);
-                app.set_status(language.format("ui.command_done", &[("command", language.label(crate::command_label(id)))]), false);
+                app.set_status(language.format("ui.command_done", &[("command", language.command(id, crate::command_label(id)))]), false);
                 // A design it could not read is said as when that was all it was asked.
                 if let Some(f) = r.as_ref().ok().and_then(|v| v["failed"].as_array()).and_then(|f| f.first()) {
                     let (name, why) = (f["name"].as_str().unwrap_or_default(), f["error"].as_str().unwrap_or_default());
@@ -1724,11 +1768,22 @@ fn land_now(app: &mut SolveApp, mut running: Running) {
                 crate::frame_watch::step(app, "before the open");
                 let tabs = app.docs.count();
                 if request.insert() {
-                    app.session.accept_computed(made.session);
+                    if let Err(error) = app.session.accept_computed(made.session) {
+                        app.open_meshing_next = false;
+                        let error = error.to_string();
+                        app.set_status(error.clone(), true);
+                        request.answer(Err(error));
+                        break 'open;
+                    }
                     app.big_operation = true;
                 } else {
                     // No tab left for it: `adopt` said why, and nothing else of the open happens.
-                    if !crate::agent_chat::with_tool_request(app, request.chat_turn.as_ref(), |app| crate::documents::adopt(app, made.session)) {
+                    // Opened by a program, not the user: nothing is asked about its links.
+                    app.docs.quiet_open = request.reply.is_some() || request.chat_turn.is_some();
+                    let adopted =
+                        crate::agent_chat::with_tool_request(app, request.chat_turn.as_ref(), |app| crate::documents::adopt(app, made.session));
+                    app.docs.quiet_open = false;
+                    if !adopted {
                         app.open_meshing_next = false;
                         // A design to recover stays offered, as when its read fails.
                         if let Kind::Recover { id, dir } = &request.kind {
@@ -1752,17 +1807,14 @@ fn land_now(app: &mut SolveApp, mut running: Running) {
                     crate::stand_up::offer(app, &request.path, &running.before, Some(&made.result));
                 }
                 crate::frame_watch::step(app, "stand-up offer");
-                let warnings = made.result.get("warnings").and_then(Value::as_array);
                 if let Kind::Recover { .. } = request.kind {
                     recovered(app, request);
                 } else {
                     app.set_status(
                         if made.result.get("read_only").and_then(Value::as_bool) == Some(true) {
                             torno_ui_text::tr("document.opened_read_only").to_string()
-                        } else if let Some(summary) = crate::timeline::import_status(app, &made.result) {
+                        } else if let Some(summary) = crate::timeline::import_warning_status(app, &made.result) {
                             summary
-                        } else if let Some(w) = warnings.filter(|w| !w.is_empty()) {
-                            format!("imported with {} warning(s): {}", w.len(), w.first().and_then(Value::as_str).unwrap_or(""))
                         } else {
                             // Built here, outside the window's language scope: in the language
                             // chosen, as the other statuses of this file are.
@@ -2265,6 +2317,30 @@ M30
             }
             assert!((volumes[0] - volumes[1]).abs() < 1e-6 * volumes[0], "{file}: {volumes:?}");
         }
+    }
+
+    /// A STEP file is read by Torno's own reader, which keeps the STEP text; with "Import
+    /// with cadmpeg" on, by cadmpeg into records, with no STEP text kept. Both bring the same
+    /// washer.
+    #[test]
+    fn cadmpeg_import_preference_reads_step_with_cadmpeg_into_records() {
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../tests/step-conformance/washer.step");
+        assert!(!crate::prefs::Prefs::default().cadmpeg_import, "off by default");
+        let mut volumes = Vec::new();
+        for on in [false, true] {
+            let mut app = SolveApp::new(Session::default(), Default::default());
+            app.preferences.cadmpeg_import = on;
+            app.insert_path(path);
+            let import = app.session.doc.features.iter().find_map(|f| match &f.kind {
+                torno_engine::doc::FeatureKind::Import { step, records, .. } => Some((step.is_empty(), records.is_some())),
+                _ => None,
+            });
+            assert_eq!(import, Some((on, on)), "preference {on}");
+            let bodies = &app.session.model.state().bodies;
+            assert_eq!(bodies.len(), 1, "preference {on}");
+            volumes.push(torno_engine::kernel::measure(&bodies[0].body).unwrap().volume);
+        }
+        assert!((volumes[0] - volumes[1]).abs() < 1e-6 * volumes[0], "{volumes:?}");
     }
 
     #[test]
@@ -2806,6 +2882,68 @@ M30
         let junk = dir.join("junk.step").to_string_lossy().into_owned();
         std::fs::write(&junk, "not a step file").unwrap();
         app.file_load.queued.push_back(Request::new(&junk, Kind::Insert));
+        start_staged(&mut app);
+        for _ in 0..4 {
+            tick(&mut app, &ctx);
+        }
+        assert!(app.file_load.running.is_none());
+        assert!(app.status.as_ref().is_some_and(|s| s.2 && s.0.contains("junk.step")), "{:?}", app.status);
+        assert!(Arc::ptr_eq(&before, &app.session.doc));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// The web app stages a STEP file by the reader its request names: one cadmpeg reads
+    /// (`reader: cadmpeg`, what "Import with cadmpeg" adds) is staged too, behind the same overlay
+    /// and Cancel, its command run in one frame after the overlay shows, not on the window's
+    /// event at once; it comes in as records with no STEP text kept, and Torno's reader
+    /// never reads the file first. Cancelled before that frame, nothing comes in; a file that
+    /// is not STEP fails with its name in the status, as the other reader's does.
+    #[test]
+    fn a_step_file_cadmpeg_reads_is_staged_by_its_reader() {
+        let dir = std::env::temp_dir().join(format!("torno-staged-cadmpeg-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../tests/step-conformance/washer.step");
+        let request = |path: &str| {
+            let mut r = Request::new(path, Kind::Insert);
+            r.options.insert("reader".into(), serde_json::json!("cadmpeg"));
+            r
+        };
+        assert!(staged_kind(&request(path)) && cadmpeg_reads(&request(path)));
+        assert!(!cadmpeg_reads(&Request::new(path, Kind::Insert)));
+        let ctx = crate::fonts::test_context();
+        let mut app = SolveApp::new(Session::default(), Default::default());
+        let bodies = |app: &SolveApp| app.session.world_state().unwrap().bodies.len();
+        app.file_load.queued.push_back(request(path));
+        start_staged(&mut app);
+        tick(&mut app, &ctx);
+        assert!(app.file_load.busy() && bodies(&app) == 0, "the first frame only shows the overlay");
+        let reading = app.file_load.running.as_ref().and_then(|r| r.staged.as_ref()).is_some_and(|s| s.reading.is_some());
+        assert!(!reading, "Torno's reader does not read the file");
+        let mut frames = 1;
+        while app.file_load.running.is_some() && frames < 1000 {
+            tick(&mut app, &ctx);
+            assert!(app.file_load.running.as_ref().and_then(|r| r.staged.as_ref()).is_none_or(|s| s.reading.is_none()));
+            frames += 1;
+        }
+        assert_eq!(bodies(&app), 1, "{:?}", app.status);
+        let import = app.session.doc.features.iter().find_map(|f| match &f.kind {
+            torno_engine::doc::FeatureKind::Import { step, records, .. } => Some((step.is_empty(), records.is_some())),
+            _ => None,
+        });
+        assert_eq!(import, Some((true, true)), "read by cadmpeg into records");
+        // Cancelled once the overlay shows, before the frame that reads: nothing comes in.
+        let before = app.session.doc.clone();
+        app.file_load.queued.push_back(request(path));
+        start_staged(&mut app);
+        tick(&mut app, &ctx);
+        app.file_load.cancel();
+        tick(&mut app, &ctx);
+        assert!(app.file_load.running.is_none() && !app.file_load.busy());
+        assert!(Arc::ptr_eq(&before, &app.session.doc));
+        // A file that isn't STEP fails, named, and the design stays.
+        let junk = dir.join("junk.step").to_string_lossy().into_owned();
+        std::fs::write(&junk, "not a step file").unwrap();
+        app.file_load.queued.push_back(request(&junk));
         start_staged(&mut app);
         for _ in 0..4 {
             tick(&mut app, &ctx);
