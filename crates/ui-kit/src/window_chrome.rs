@@ -21,7 +21,7 @@
 //! A move or resize hands the press to the OS, which keeps the pointer until the button goes up.
 //! On X11 the window manager then receives that release, not the app, so egui would keep the
 //! button down and the next press would only end the old drag: the bar moved the window every
-//! other time (#13334). An app calls [`release_press_taken_by_os`] first in its raw-input hook.
+//! other time (#13334). An app calls [`release_press_taken_by_os`] first in its raw-input hook, then [`release_stale_input`].
 //!
 //! Adapted from VectorCraft's `crates/ui-egui/src/titlebar.rs` (MIT OR Apache-2.0).
 
@@ -40,8 +40,9 @@ pub const CONTROL: f32 = 28.0;
 pub const CONTROL_MARGIN: f32 = 6.0;
 /// The three caption buttons together.
 pub const WIDTH: f32 = 3.0 * BUTTON_WIDTH;
-/// Room for the macOS traffic lights at the bar's left end.
-pub const TRAFFIC_LIGHTS: f32 = 76.0;
+/// Room for the macOS traffic lights at the bar's left end: nodalia-design's measure, the same in
+/// every Nodalia app.
+pub const TRAFFIC_LIGHTS: f32 = nodalia_theme::titlebar::MAC_LIGHTS;
 /// Windows' resize border at 100 % (96 DPI): `SM_CXSIZEFRAME` + `SM_CXPADDEDBORDER`, 4 + 4 px.
 pub const RESIZE_BORDER_AT_96_DPI: f32 = 8.0;
 
@@ -128,6 +129,12 @@ pub fn toggle_maximize(ctx: &egui::Context) {
     ctx.send_viewport_cmd(ViewportCommand::Maximized(!maximized(ctx)));
 }
 
+/// Whether the desktop keeps its window buttons at the left end of the bar: some Linux desktops
+/// do (GNOME's `button-layout`, KDE's titlebar buttons; `NODALIA_WINDOW_BUTTONS=left` forces it).
+pub fn system_captions_left() -> bool {
+    nodalia_theme::titlebar::system_side() == nodalia_theme::titlebar::Side::Left
+}
+
 /// How the window's title bar behaves: which of the OS's controls share the bar.
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
 pub struct TitleBar {
@@ -135,6 +142,9 @@ pub struct TitleBar {
     pub traffic_lights: bool,
     /// No OS decorations (Windows, Linux): the bar has its own caption buttons at the right end.
     pub caption_buttons: bool,
+    /// The caption buttons are at the left end instead, where some Linux desktops keep them
+    /// ([`nodalia_theme::titlebar::system_side`]): close first, then maximize, then minimize.
+    pub captions_left: bool,
 }
 
 /// Where a [`TitleBar`] puts things in the bar's rect.
@@ -144,18 +154,28 @@ pub struct TitleBarLayout {
     pub drag: Option<Rect>,
     /// What is left for the app's contents.
     pub content: Rect,
-    /// The caption buttons, flush with the window's right edge.
+    /// The caption buttons, flush with the window's edge on their side.
     pub captions: Option<Rect>,
 }
 
 impl TitleBar {
     pub fn layout(self, bar: Rect) -> TitleBarLayout {
-        let left = bar.left() + if self.traffic_lights { TRAFFIC_LIGHTS } else { 0.0 };
-        let right = bar.right() - if self.caption_buttons { WIDTH } else { 0.0 };
+        let at_left = self.caption_buttons && self.captions_left;
+        let at_right = self.caption_buttons && !self.captions_left;
+        // After buttons at the left the contents keep the gap every Nodalia bar leaves there.
+        let left = bar.left()
+            + if self.traffic_lights { TRAFFIC_LIGHTS } else { 0.0 }
+            + if at_left { WIDTH + nodalia_theme::titlebar::CONTENT_GAP } else { 0.0 };
+        let right = bar.right() - if at_right { WIDTH } else { 0.0 };
+        let captions = if at_left {
+            Some(Rect::from_min_max(bar.left_top(), pos2(bar.left() + WIDTH, bar.bottom())))
+        } else {
+            at_right.then(|| Rect::from_min_max(pos2(right, bar.top()), bar.right_bottom()))
+        };
         TitleBarLayout {
             drag: (self.traffic_lights || self.caption_buttons).then_some(bar),
             content: Rect::from_min_max(pos2(left, bar.top()), pos2(right, bar.bottom())),
-            captions: self.caption_buttons.then(|| Rect::from_min_max(pos2(right, bar.top()), bar.right_bottom())),
+            captions,
         }
     }
 
@@ -168,7 +188,7 @@ impl TitleBar {
             drag_area(ui, r);
         }
         contents(ui, layout.content);
-        if self.caption_buttons { caption_buttons(ui, bar) } else { None }
+        if self.caption_buttons { caption_buttons(ui, bar, self.captions_left) } else { None }
     }
 }
 
@@ -216,11 +236,147 @@ pub fn release_press_taken_by_os(ctx: &egui::Context, raw: &mut egui::RawInput) 
     }
 }
 
-/// Minimize, Maximize/Restore and Close at the right end of `bar`: the Nodalia Design Language's
+fn stale_input_id() -> Id {
+    Id::unique("window-chrome-stale-input")
+}
+
+/// Note that a native dialog (a file picker) just closed: the OS may have kept a button release
+/// or a modifier release for itself, so [`release_stale_input`] lets go of what is still held.
+pub fn mark_input_stale(ctx: &egui::Context) {
+    ctx.data_mut(|d| d.insert_temp(stale_input_id(), true));
+}
+
+/// Let go of a pointer button whose release the app never received, before the frame's own
+/// events: after the window lost focus or a native dialog closed (`recover_after_focus`), when
+/// the pointer comes back into the window after leaving it with a button held and no motion
+/// reported outside, and when a button egui still holds is pressed again
+/// (`release_lost_presses`). Otherwise egui keeps the button down and the canvas ignores every
+/// pick (#16460).
+pub fn release_stale_input(ctx: &egui::Context, raw: &mut egui::RawInput) {
+    recover_after_focus(ctx, raw);
+    release_lost_presses(ctx, raw);
+}
+
+/// After the window lost focus (or a native dialog closed), on the next frame the window has
+/// focus: release each pointer button egui still holds down, at the last pointer position, before
+/// the frame's own events. On Wayland a file dialog takes the pointer and keyboard, so a release
+/// may never arrive, and egui would keep the button down and ignore canvas picks (#16460). A
+/// regained focus also clears the modifiers; the OS reports the real ones after.
+fn recover_after_focus(ctx: &egui::Context, raw: &mut egui::RawInput) {
+    let last_lost = raw.events.iter().rposition(|e| matches!(e, egui::Event::WindowFocused(false)));
+    let regained = raw.events.iter().any(|e| matches!(e, egui::Event::WindowFocused(true)));
+    let marked = ctx.data(|d| d.get_temp::<bool>(stale_input_id())).unwrap_or(false);
+    // Focus ends the frame lost: recover when it is back. Otherwise recover now: at the loss when
+    // the batch also regains focus (later events, a fresh press among them, stay as they are), or
+    // at the start of the frame for a marked dialog.
+    let at = match last_lost {
+        Some(_) if !raw.focused => {
+            mark_input_stale(ctx);
+            return;
+        }
+        Some(i) => i + 1,
+        None if raw.focused && marked => 0,
+        None => {
+            if regained {
+                raw.events.insert(0, egui::Event::ModifiersChanged(egui::Modifiers::NONE));
+            }
+            return;
+        }
+    };
+    ctx.data_mut(|d| d.remove_temp::<bool>(stale_input_id()));
+    let (pos, modifiers) = ctx.input(|i| (i.pointer.latest_pos().or(i.pointer.interact_pos()).unwrap_or(Pos2::ZERO), i.modifiers));
+    let held: Vec<PointerButton> = [PointerButton::Primary, PointerButton::Secondary, PointerButton::Middle]
+        .into_iter()
+        .filter(|b| ctx.input(|i| i.pointer.button_down(*b)))
+        .collect();
+    let mut recovery = Vec::new();
+    if !held.is_empty() {
+        // The release must not complete the interrupted press as a click, which would activate
+        // the widget under it: egui drops click eligibility once the pointer is far from the press.
+        let away = pos + egui::vec2(1000.0, 1000.0);
+        recovery.push(egui::Event::PointerMoved(away));
+        recovery.extend(held.into_iter().map(|button| egui::Event::PointerButton { pos: away, button, pressed: false, modifiers }));
+        recovery.push(egui::Event::PointerGone);
+    }
+    recovery.push(egui::Event::ModifiersChanged(egui::Modifiers::NONE));
+    raw.events.splice(at..at, recovery);
+}
+
+fn left_holding_id() -> Id {
+    Id::unique("window-chrome-left-holding")
+}
+
+const BUTTONS: [PointerButton; 3] = [PointerButton::Primary, PointerButton::Secondary, PointerButton::Middle];
+
+/// A held button whose release went elsewhere. While a button is held the platform keeps the
+/// pointer with the window: X11, Windows and macOS go on reporting its motion outside the window,
+/// and Wayland does not let it leave at all. So a pointer that left with a button held and comes
+/// back with no motion reported outside lost that press to the system (a compositor gesture or
+/// grab took the release), and a press of a button egui still holds means its release was lost.
+/// Either way the stale press is let go first, away from where it was pressed so it is no click.
+fn release_lost_presses(ctx: &egui::Context, raw: &mut egui::RawInput) {
+    let window = raw.screen_rect.unwrap_or_else(|| ctx.viewport_rect());
+    let mut held: Vec<PointerButton> = BUTTONS.into_iter().filter(|b| ctx.input(|i| i.pointer.button_down(*b))).collect();
+    let mut left_holding = ctx.data(|d| d.get_temp::<bool>(left_holding_id())).unwrap_or(false);
+    let (last, modifiers) = ctx.input(|i| (i.pointer.latest_pos().or(i.pointer.interact_pos()).unwrap_or(Pos2::ZERO), i.modifiers));
+    let release_all = |held: &mut Vec<PointerButton>, at: Pos2, out: &mut Vec<egui::Event>| {
+        let away = at + egui::vec2(1000.0, 1000.0);
+        out.push(egui::Event::PointerMoved(away));
+        out.extend(held.drain(..).map(|button| egui::Event::PointerButton { pos: away, button, pressed: false, modifiers }));
+    };
+    let mut events = Vec::with_capacity(raw.events.len());
+    let mut at = last;
+    for event in std::mem::take(&mut raw.events) {
+        match &event {
+            egui::Event::PointerGone => left_holding = !held.is_empty(),
+            egui::Event::PointerMoved(p) => {
+                if left_holding && !held.is_empty() && window.contains(*p) {
+                    release_all(&mut held, at, &mut events);
+                }
+                left_holding = false;
+                at = *p;
+            }
+            egui::Event::PointerButton { pos, button, pressed: true, .. } => {
+                if held.contains(button) {
+                    held.retain(|b| b != button);
+                    let away = *pos + egui::vec2(1000.0, 1000.0);
+                    events.push(egui::Event::PointerMoved(away));
+                    events.push(egui::Event::PointerButton { pos: away, button: *button, pressed: false, modifiers });
+                    events.push(egui::Event::PointerMoved(*pos));
+                }
+                held.push(*button);
+                left_holding = false;
+                at = *pos;
+            }
+            egui::Event::PointerButton { button, pressed: false, .. } => held.retain(|b| b != button),
+            _ => {}
+        }
+        events.push(event);
+    }
+    raw.events = events;
+    ctx.data_mut(|d| d.insert_temp(left_holding_id(), left_holding && !held.is_empty()));
+}
+
+/// Make the window set its pointer cursor again when focus returns or the pointer comes back
+/// into the window. egui-winit sends a cursor to the window only when the requested icon
+/// changes, but on Wayland the compositor shows the previous program's cursor after the pointer
+/// enters until the client sets its own. `CursorVisible(true)` makes winit apply its current
+/// cursor with the latest enter serial. A native app calls this in its raw-input hook; the web
+/// build has no window cursor to refresh.
+pub fn reapply_cursor_on_return(ctx: &egui::Context, raw: &egui::RawInput) {
+    let focus_back = raw.events.iter().any(|e| matches!(e, egui::Event::WindowFocused(true)));
+    let pointer_back = ctx.input(|i| i.pointer.latest_pos().is_none()) && raw.events.iter().any(|e| matches!(e, egui::Event::PointerMoved(_)));
+    if focus_back || pointer_back {
+        ctx.send_viewport_cmd(ViewportCommand::CursorVisible(true));
+    }
+}
+
+/// Minimize, Maximize/Restore and Close at the right end of `bar` (at the left end, close first,
+/// when `left`): the Nodalia Design Language's
 /// three round controls, each a 28 pt disc on its own. Under the pointer minimise takes an amber
 /// tint, maximise a cyan one and close turns coral, with NDL's own glyphs. The one clicked, as the
 /// action for the app to run. Only Linux draws them: macOS and Windows keep their native controls.
-pub fn caption_buttons(ui: &mut Ui, bar: Rect) -> Option<WindowAction> {
+pub fn caption_buttons(ui: &mut Ui, bar: Rect, left: bool) -> Option<WindowAction> {
     let max = maximized(ui.ctx());
     let dark = torno_theme::is_dark();
     let p = torno_theme::ndl::palette(dark);
@@ -228,7 +384,10 @@ pub fn caption_buttons(ui: &mut Ui, bar: Rect) -> Option<WindowAction> {
     use nodalia_theme::window_color as wc;
     let mut clicked = None;
     for (i, c) in CAPTIONS.into_iter().enumerate() {
-        let r = Rect::from_min_size(pos2(bar.right() - WIDTH + i as f32 * BUTTON_WIDTH, bar.top()), vec2(BUTTON_WIDTH, bar.height()));
+        // From the window's edge: slot 0 is the one against it, 2 is the innermost.
+        let slot = if left { 2 - i } else { i };
+        let x = if left { bar.left() + slot as f32 * BUTTON_WIDTH } else { bar.right() - WIDTH + slot as f32 * BUTTON_WIDTH };
+        let r = Rect::from_min_size(pos2(x, bar.top()), vec2(BUTTON_WIDTH, bar.height()));
         let resp = ui.interact(r, caption_id(c), Sense::click());
         let hot = resp.hovered() || resp.has_focus() || resp.is_pointer_button_down_on();
         let (fill, glyph_ink) = match (c, hot) {
@@ -240,7 +399,11 @@ pub fn caption_buttons(ui: &mut Ui, bar: Rect) -> Option<WindowAction> {
         let (fill, glyph_ink) = (nodalia_theme::for_egui::color(fill), nodalia_theme::for_egui::color(glyph_ink));
         let fill = if resp.is_pointer_button_down_on() { torno_theme::ndl::c(p.control_bg_pressed) } else { fill };
         // The disc, centred in its slot: the last one sits a margin in from the window's edge.
-        let centre = pos2(r.center().x - CONTROL_MARGIN * (i as f32 / 2.0), r.center().y);
+        let centre = if left {
+            pos2(r.center().x + CONTROL_MARGIN * ((2 - slot) as f32 / 2.0), r.center().y)
+        } else {
+            pos2(r.center().x - CONTROL_MARGIN * (slot as f32 / 2.0), r.center().y)
+        };
         ui.painter().circle_filled(centre, CONTROL / 2.0, fill);
         let glyph = match c {
             Caption::Minimize => "window-minimize",
@@ -412,19 +575,24 @@ mod tests {
     fn title_bar_from_plain_inputs_insets_for_the_traffic_lights_and_drags_from_empty_space() {
         let bar = Rect::from_min_size(Pos2::ZERO, vec2(1200.0, BAR));
         // macOS: the OS draws the traffic lights over the bar's left end; no caption buttons.
-        let mac = TitleBar { traffic_lights: true, caption_buttons: false };
+        let mac = TitleBar { traffic_lights: true, ..Default::default() };
         let layout = mac.layout(bar);
         assert_eq!(layout.drag, Some(bar));
         assert_eq!(layout.content, Rect::from_min_max(pos2(TRAFFIC_LIGHTS, 0.0), pos2(1200.0, BAR)));
         assert_eq!(layout.captions, None);
         // Windows and Linux without OS decorations: caption buttons at the right end.
-        let own = TitleBar { traffic_lights: false, caption_buttons: true };
+        let own = TitleBar { caption_buttons: true, ..Default::default() };
         let layout = own.layout(bar);
         assert_eq!(layout.drag, Some(bar));
         assert_eq!(layout.content, Rect::from_min_max(pos2(0.0, 0.0), pos2(1200.0 - WIDTH, BAR)));
         assert_eq!(layout.captions, Some(Rect::from_min_max(pos2(1200.0 - WIDTH, 0.0), pos2(1200.0, BAR))));
+        // Where the desktop keeps them on the left (some Linux desktops): the contents start after them.
+        let left = TitleBar { caption_buttons: true, captions_left: true, ..Default::default() };
+        let layout = left.layout(bar);
+        assert_eq!(layout.captions, Some(Rect::from_min_max(pos2(0.0, 0.0), pos2(WIDTH, BAR))));
+        assert_eq!(layout.content, Rect::from_min_max(pos2(WIDTH + nodalia_theme::titlebar::CONTENT_GAP, 0.0), pos2(1200.0, BAR)));
         // The OS's own title bar: the bar is plain content and moves nothing.
-        let os = TitleBar { traffic_lights: false, caption_buttons: false };
+        let os = TitleBar::default();
         assert_eq!(os.layout(bar), TitleBarLayout { drag: None, content: bar, captions: None });
 
         let mut w = Bar::new(mac, 1200.0);
@@ -438,7 +606,7 @@ mod tests {
         cmds.extend(w.gesture(&[empty]).0);
         assert!(cmds.contains(&ViewportCommand::Maximized(true)), "double-click maximizes: {cmds:?}");
 
-        let mut w = Bar::new(TitleBar { traffic_lights: false, caption_buttons: false }, 1200.0);
+        let mut w = Bar::new(TitleBar::default(), 1200.0);
         w.frame(vec![]);
         let (cmds, _) = w.gesture(&[empty, empty + vec2(30.0, 8.0)]);
         assert!(cmds.is_empty(), "no drag area under the OS's own title bar: {cmds:?}");
@@ -446,7 +614,7 @@ mod tests {
 
     #[test]
     fn caption_buttons_return_actions_and_leave_close_to_the_app() {
-        let mut w = Bar::new(TitleBar { traffic_lights: false, caption_buttons: true }, 1200.0);
+        let mut w = Bar::new(TitleBar { caption_buttons: true, ..Default::default() }, 1200.0);
         w.frame(vec![]);
         let at = |c: Caption| w.ctx.read_response(caption_id(c)).map(|r| r.rect.center()).unwrap_or(Pos2::ZERO);
         let (min, max, close) = (at(Caption::Minimize), at(Caption::Maximize), at(Caption::Close));
@@ -554,5 +722,155 @@ mod tests {
         assert_eq!(dpi_scaled_size((1001, 777), 96, 96), Some((1001, 777)));
         assert_eq!(dpi_scaled_size((1001, 777), 0, 96), None);
         assert_eq!(dpi_scaled_size((0, 777), 96, 144), None);
+    }
+
+    /// Frames of raw input through `release_stale_input`, as the apps' hooks run them.
+    struct Hooked {
+        ctx: egui::Context,
+        time: f64,
+    }
+
+    impl Hooked {
+        fn new() -> Self {
+            Self { ctx: crate::test_support::context(), time: 0.0 }
+        }
+
+        fn frame(&mut self, events: Vec<Event>, focused: bool, add: impl FnMut(&mut egui::Ui)) -> Vec<Event> {
+            self.time += 0.05;
+            let mut raw = RawInput {
+                screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(400.0, 300.0))),
+                time: Some(self.time),
+                events,
+                focused,
+                ..Default::default()
+            };
+            release_stale_input(&self.ctx, &mut raw);
+            let events = raw.events.clone();
+            let mut add = add;
+            self.ctx.run_ui(raw, |ui| add(ui)).textures_delta.clear();
+            events
+        }
+
+        fn press(&self, at: Pos2, mods: egui::Modifiers) -> Vec<Event> {
+            vec![
+                Event::PointerMoved(at),
+                Event::ModifiersChanged(mods),
+                Event::PointerButton { pos: at, button: PointerButton::Primary, pressed: true, modifiers: mods },
+            ]
+        }
+    }
+
+    #[test]
+    fn focus_lost_with_a_button_held_releases_it_on_regain_and_clears_modifiers() {
+        let mut h = Hooked::new();
+        let ctrl = egui::Modifiers { ctrl: true, ..Default::default() };
+        let at = pos2(50.0, 60.0);
+        h.frame(h.press(at, ctrl), true, |_| {});
+        assert!(h.ctx.input(|i| i.pointer.primary_down()));
+        h.frame(vec![Event::PointerGone, Event::WindowFocused(false)], false, |_| {});
+        assert!(h.ctx.input(|i| i.pointer.primary_down()), "egui keeps the button down");
+        let events = h.frame(vec![Event::WindowFocused(true)], true, |_| {});
+        assert!(events.iter().any(|e| matches!(e, Event::PointerButton { button: PointerButton::Primary, pressed: false, .. })));
+        assert!(events.iter().any(|e| matches!(e, Event::ModifiersChanged(m) if m.is_none())));
+        assert!(!h.ctx.input(|i| i.pointer.primary_down()));
+        assert!(h.ctx.input(|i| i.modifiers.is_none()));
+        assert!(h.frame(vec![], true, |_| {}).is_empty(), "nothing is stale the second time");
+    }
+
+    #[test]
+    fn a_closed_native_dialog_releases_a_held_button_and_modifier() {
+        let mut h = Hooked::new();
+        let ctrl = egui::Modifiers { ctrl: true, ..Default::default() };
+        h.frame(h.press(pos2(10.0, 10.0), ctrl), true, |_| {});
+        assert!(h.ctx.input(|i| i.pointer.primary_down() && i.modifiers.ctrl));
+        mark_input_stale(&h.ctx);
+        h.frame(vec![], true, |_| {});
+        assert!(!h.ctx.input(|i| i.pointer.primary_down()));
+        assert!(h.ctx.input(|i| i.modifiers.is_none()), "Ctrl released inside the dialog is not still held");
+    }
+
+    #[test]
+    fn a_press_after_focus_returns_in_the_same_batch_stays_held() {
+        let mut h = Hooked::new();
+        h.frame(h.press(pos2(10.0, 10.0), Default::default()), true, |_| {});
+        let fresh = Event::PointerButton { pos: pos2(80.0, 80.0), button: PointerButton::Primary, pressed: true, modifiers: Default::default() };
+        h.frame(vec![Event::WindowFocused(false), Event::WindowFocused(true), Event::PointerMoved(pos2(80.0, 80.0)), fresh], true, |_| {});
+        assert!(h.ctx.input(|i| i.pointer.primary_down()), "the new press is the user's");
+        assert!(h.frame(vec![], true, |_| {}).is_empty(), "and the next frame does not release it");
+        assert!(h.ctx.input(|i| i.pointer.primary_down()));
+    }
+
+    #[test]
+    fn recovering_a_held_press_does_not_click_the_widget_under_it() {
+        let mut h = Hooked::new();
+        let clicked = std::cell::Cell::new(false);
+        let button = |ui: &mut egui::Ui| {
+            let r = ui.put(Rect::from_min_size(pos2(20.0, 20.0), vec2(100.0, 40.0)), egui::Button::new("Go"));
+            if r.clicked() {
+                clicked.set(true);
+            }
+        };
+        let at = pos2(40.0, 30.0);
+        h.frame(vec![Event::PointerMoved(at)], true, button);
+        h.frame(vec![Event::PointerButton { pos: at, button: PointerButton::Primary, pressed: true, modifiers: Default::default() }], true, button);
+        h.frame(vec![Event::WindowFocused(false)], false, button);
+        h.frame(vec![Event::WindowFocused(true)], true, button);
+        assert!(!h.ctx.input(|i| i.pointer.primary_down()));
+        assert!(!clicked.get(), "the interrupted press must not activate the widget");
+    }
+
+    #[test]
+    fn a_pointer_back_without_its_release_lets_go_but_a_drag_tracked_outside_stays() {
+        let released = |events: &[Event]| events.iter().any(|e| matches!(e, Event::PointerButton { pressed: false, .. }));
+        // A compositor took the release: the pointer left with the button held and comes back
+        // with nothing reported in between (#16460).
+        let mut h = Hooked::new();
+        h.frame(h.press(pos2(50.0, 60.0), Default::default()), true, |_| {});
+        h.frame(vec![Event::PointerGone], true, |_| {});
+        assert!(h.ctx.input(|i| i.pointer.primary_down()), "egui keeps the button down");
+        let events = h.frame(vec![Event::PointerMoved(pos2(70.0, 80.0))], true, |_| {});
+        assert!(released(&events));
+        assert!(!h.ctx.input(|i| i.pointer.primary_down()));
+        assert_eq!(h.ctx.input(|i| i.pointer.latest_pos()), Some(pos2(70.0, 80.0)), "the pointer is where it came back");
+        // A drag the platform kept reporting outside the window is still the user's.
+        let mut h = Hooked::new();
+        h.frame(h.press(pos2(50.0, 60.0), Default::default()), true, |_| {});
+        h.frame(vec![Event::PointerGone, Event::PointerMoved(pos2(450.0, 60.0))], true, |_| {});
+        assert!(!released(&h.frame(vec![Event::PointerMoved(pos2(300.0, 60.0))], true, |_| {})));
+        assert!(h.ctx.input(|i| i.pointer.primary_down()));
+    }
+
+    #[test]
+    fn a_second_press_of_a_held_button_lets_go_of_the_first() {
+        let mut h = Hooked::new();
+        let right =
+            |pressed| Event::PointerButton { pos: pos2(40.0, 40.0), button: PointerButton::Secondary, pressed, modifiers: Default::default() };
+        h.frame(vec![Event::PointerMoved(pos2(40.0, 40.0)), right(true)], true, |_| {});
+        // Its release never came: the next press of the same button is a new one.
+        let events = h.frame(vec![right(true)], true, |_| {});
+        let release = events.iter().position(|e| matches!(e, Event::PointerButton { button: PointerButton::Secondary, pressed: false, .. }));
+        let press = events.iter().rposition(|e| matches!(e, Event::PointerButton { button: PointerButton::Secondary, pressed: true, .. }));
+        assert!(release.zip(press).is_some_and(|(r, p)| r < p), "the old press goes before the new one: {events:?}");
+        assert!(h.ctx.input(|i| i.pointer.secondary_down()));
+        h.frame(vec![right(false)], true, |_| {});
+        assert!(!h.ctx.input(|i| i.pointer.secondary_down()), "and its own release lets go");
+    }
+
+    #[test]
+    fn focus_or_pointer_return_asks_the_window_to_set_its_cursor_again() {
+        let ctx = crate::test_support::context();
+        let run = |events: Vec<Event>| {
+            let raw =
+                RawInput { screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(400.0, 300.0))), time: Some(0.1), events, ..Default::default() };
+            reapply_cursor_on_return(&ctx, &raw);
+            let mut out = ctx.run_ui(raw, |_| {});
+            out.textures_delta.clear();
+            out.viewport_output.remove(&ViewportId::ROOT).map(|v| v.commands).unwrap_or_default()
+        };
+        let reapplies = |cmds: &[ViewportCommand]| cmds.iter().any(|c| matches!(c, ViewportCommand::CursorVisible(true)));
+        assert!(reapplies(&run(vec![Event::WindowFocused(true)])), "focus regained");
+        assert!(reapplies(&run(vec![Event::PointerMoved(pos2(5.0, 5.0))])), "pointer back in the window");
+        assert!(!reapplies(&run(vec![Event::PointerMoved(pos2(6.0, 6.0))])), "an ordinary move changes nothing");
+        assert!(!reapplies(&run(vec![Event::WindowFocused(false)])), "focus lost");
     }
 }

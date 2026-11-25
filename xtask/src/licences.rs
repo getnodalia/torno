@@ -181,12 +181,21 @@ fn render(root: &Path, crates: &[Crate]) -> String {
          - CraftUI-TC.otf (assets/fonts/nodalia-ui-tc/CraftUI-TC.otf)\n  \
            Copyright 2014-2021 Adobe / Google Inc. (Noto Sans TC subset for Torno web zh-TW)\n  \
            Source: https://github.com/notofonts/noto-cjk (Sans SubsetOTF/TC)\n\n\
+         - CraftUI-KR.otf (assets/fonts/nodalia-ui-kr/CraftUI-KR.otf)\n  \
+           Copyright 2014-2021 Adobe / Google Inc. (Noto Sans KR subset for Torno web ko)\n  \
+           Source: https://github.com/notofonts/noto-cjk (Sans SubsetOTF/KR)\n\n\
          - IBMPlexSans-Variable.ttf (crates/look/fonts/ibm-plex-sans/IBMPlexSans-Variable.ttf)\n  \
            Copyright 2017 IBM Corp. with Reserved Font Name \"Plex\"\n  \
            Source: https://github.com/IBM/plex\n\n\
          - IBMPlexMono-Regular.ttf (crates/look/fonts/ibm-plex-mono/IBMPlexMono-Regular.ttf)\n  \
            Copyright 2017 IBM Corp. with Reserved Font Name \"Plex\"\n  \
-           Source: https://github.com/IBM/plex\n\n"
+           Source: https://github.com/IBM/plex\n\n\
+         - NotoSansArabic-Regular.ttf (assets/fonts/noto-sans-arabic/NotoSansArabic-Regular.ttf)\n  \
+           Copyright 2022 The Noto Project Authors (https://github.com/notofonts/arabic)\n  \
+           Source: https://github.com/notofonts/notofonts.github.io\n\n\
+         - NotoSansKR-Regular.otf, NotoSansSC-Regular.otf and NotoSansTC-Regular.otf (assets/fonts/noto-sans-kr, -sc and -tc)\n  \
+           Copyright 2014-2021 Adobe (http://www.adobe.com/)\n  \
+           Source: https://github.com/notofonts/noto-cjk\n\n"
     );
     let ofl_path = root.join("assets/fonts/biz-udp-gothic/OFL.txt");
     let fallback_path = root.join("crates/sketch/assets/fonts/liberation-sans/OFL.txt");

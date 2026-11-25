@@ -64,7 +64,7 @@
       <string>Alternate</string>
     </dict>
   </array>
-  <!-- The design type: .sc, and the older .solidcraft and .solvecraft (docs/compatibility.md). -->
+  <!-- The design type: .sc, and the older .solidcraft (docs/compatibility.md). -->
   <key>UTExportedTypeDeclarations</key>
   <array>
     <dict>

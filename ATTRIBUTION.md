@@ -695,8 +695,6 @@ Original Torno drawings, Open for owner review; no runtime assignments.
 | docs/design/preferences/figures/mouse-mapping.light.svg | Torno contributors | original Torno artwork drawn for the Preferences redesign (tracker #9863), extracted from the design board as a standalone SVG | MIT OR Apache-2.0 |
 | docs/design/preferences/figures/navigator-axes.dark.svg | Torno contributors | original Torno artwork drawn for the Preferences redesign (tracker #9863), extracted from the design board as a standalone SVG | MIT OR Apache-2.0 |
 | docs/design/preferences/figures/navigator-axes.light.svg | Torno contributors | original Torno artwork drawn for the Preferences redesign (tracker #9863), extracted from the design board as a standalone SVG | MIT OR Apache-2.0 |
-| docs/design/preferences/figures/navigator-cube.dark.svg | Torno contributors | original Torno artwork drawn for the Preferences redesign (tracker #9863), extracted from the design board as a standalone SVG | MIT OR Apache-2.0 |
-| docs/design/preferences/figures/navigator-cube.light.svg | Torno contributors | original Torno artwork drawn for the Preferences redesign (tracker #9863), extracted from the design board as a standalone SVG | MIT OR Apache-2.0 |
 | docs/design/preferences/figures/orbit-centre.dark.svg | Torno contributors | original Torno artwork drawn for the Preferences redesign (tracker #9863), extracted from the design board as a standalone SVG | MIT OR Apache-2.0 |
 | docs/design/preferences/figures/orbit-centre.light.svg | Torno contributors | original Torno artwork drawn for the Preferences redesign (tracker #9863), extracted from the design board as a standalone SVG | MIT OR Apache-2.0 |
 | docs/design/preferences/figures/orbit-cursor.dark.svg | Torno contributors | original Torno artwork drawn for the Preferences redesign (tracker #9863), extracted from the design board as a standalone SVG | MIT OR Apache-2.0 |
@@ -860,6 +858,7 @@ Original Torno drawings, Open for owner review; no runtime assignments.
 | apps/torno/src/open_documents.rs (macOS: files opened from Finder and the Dock, its test) | VectorCraft `apps/vectorcraft/src/open_documents.rs` (https://github.com/storytold/vectorcraft) | MIT OR Apache-2.0 |
 | LICENSE-MIT, LICENSE-APACHE (licence text) | CADCraft | — |
 | .github/workflows/release.yml, .github/workflows/packaging-lint.yml and packaging/ (release pipeline: Linux AppImage/deb/rpm/Flatpak/tar.gz, FreeBSD, macOS dmg, Windows MSI/portable zip, web zip; AppRun, nfpm, Flatpak, WiX and Info.plist templates) | PhotoCraft (https://github.com/storytold/photocraft) `.github/workflows/{release,packaging-lint}.yml`, `packaging/` | Apache-2.0 |
+| crates/viewport-gpu/src/environment.rs (the neutral room scene, the GGX prefilter and environment-BRDF table), crates/viewport-gpu/shaders/viewport.wgsl (`finished`, `ibl_ggx_fresnel`, `pbr_neutral`) | google/model-viewer `EnvironmentScene.ts` and its exposure for it (https://github.com/google/model-viewer); KhronosGroup glTF-Sample-Renderer `ibl.glsl`, `pbr.frag` (https://github.com/KhronosGroup/glTF-Sample-Renderer); KhronosGroup ToneMapping `pbrNeutral.glsl`; google/filament `light_indirect.fs`, `ambient_occlusion.fs` (https://github.com/google/filament) | Apache-2.0 |
 
 ## Incremental HDR codec adapter
 
@@ -915,9 +914,11 @@ copied into Torno.
 
 ## Vendored renderer compatibility fix
 
-`vendor/egui-wgpu` is egui-wgpu 0.37.0 from https://github.com/emilk/egui
-(MIT OR Apache-2.0; both original licence texts are included). Rust sources and
-its original `egui.wgsl` shader are retained; no images or other artwork are copied.
+`vendor/egui` is egui 0.37.0 from https://github.com/emilk/egui, added whole with
+`git subtree` (MIT OR Apache-2.0; both original licence texts are included). It is a third-party
+project Torno depends on, kept as upstream has it, with its own licences, images (as Git LFS
+pointers, never downloaded) and fonts. The egui-wgpu crate in it carries the
+compatibility fix below (`vendor/README.md` lists every change).
 Torno's narrow patch selects a safe 1x MSAA path on the chosen OpenGL adapter
 and shares that effective count with the surface attachments and CAD callbacks.
 Vulkan, DirectX 12, Metal and WebGPU retain their requested multisampling.

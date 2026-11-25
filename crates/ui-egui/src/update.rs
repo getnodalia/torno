@@ -134,7 +134,13 @@ pub fn current_version() -> &'static str {
 /// The release workflow built this binary (`TORNO_VERSION` is set there). Anything else is a
 /// development build, which never checks for updates.
 pub fn release_build() -> bool {
-    option_env!("TORNO_VERSION").is_some_and(|v| !v.is_empty()) && !cfg!(debug_assertions)
+    option_env!("TORNO_VERSION").is_some_and(|v| !v.is_empty() && !is_test_version(v)) && !cfg!(debug_assertions)
+}
+
+/// A one-off test build (`0.43.0-test+abc1234`, from test-build.yml): it is not a release, so it
+/// is treated like a development build and never checks for or offers an update.
+pub fn is_test_version(v: &str) -> bool {
+    parse_version(v).is_some_and(|v| v.pre.as_str() == "test")
 }
 
 // ---- installations ----------------------------------------------------------------------------
@@ -578,6 +584,8 @@ pub struct Updater {
     pub installed: Option<Result<install::Outcome, String>>,
     /// A program for the host to start as Torno exits (restart, installer).
     launch: Option<(PathBuf, Vec<String>)>,
+    /// macOS: the verified disk image the host swaps in for `Torno.app` as Torno exits.
+    replace: Option<PathBuf>,
     /// The host should drop process-local graphics fallback overrides for this restart.
     graphics_restart: bool,
 }
@@ -604,9 +612,12 @@ pub fn offered(app: &SolveApp) -> Option<&Release> {
     app.preferences.update.offers(r, current_version(), unix_now()).then_some(r)
 }
 
-/// Checks may run here: a release build with the host's HTTP client, or a test feed.
+/// Checks may run here: a release build with the host's HTTP client, or a test feed, unless the
+/// organization's policy turned checks off.
 pub fn available(app: &mut SolveApp) -> bool {
-    !app.updater.off && (app.updater.feed.is_some() || (app.services.http_get.is_some() && app.updater.kind().checks()))
+    !app.updater.off
+        && app.policy.mandatory.check_for_updates != Some(false)
+        && (app.updater.feed.is_some() || (app.services.http_get.is_some() && app.updater.kind().checks()))
 }
 
 /// Per frame: the first frame of each launch starts an automatic check, the open app checks
@@ -614,8 +625,9 @@ pub fn available(app: &mut SolveApp) -> bool {
 pub fn tick(app: &mut SolveApp, ctx: &egui::Context) {
     poll_install(app);
     // Quitting to restart or install was cancelled (a "save changes?" answered Cancel).
-    if app.updater.launch.is_some() && app.docs.quitting.is_none() && !app.quit_requested {
+    if (app.updater.launch.is_some() || app.updater.replace.is_some()) && app.docs.quitting.is_none() && !app.quit_requested {
         app.updater.launch = None;
+        app.updater.replace = None;
         app.updater.graphics_restart = false;
     }
     if !app.updater.started {
@@ -635,7 +647,7 @@ pub fn tick(app: &mut SolveApp, ctx: &egui::Context) {
     let launch = !app.updater.launch_checked;
     if app.updater.job.is_none()
         && app.updater.rx.is_none()
-        && app.preferences.check_updates
+        && crate::policy::check_updates(app)
         && app.preferences.update.due(now, launch)
         && available(app)
     {
@@ -758,7 +770,15 @@ pub fn install_method(app: &mut SolveApp) -> Option<install::Method> {
     #[cfg(not(target_arch = "wasm32"))]
     {
         let exe = std::env::current_exe().ok();
-        install::method(app.updater.kind(), exe.as_deref())
+        let method = install::method(app.updater.kind(), exe.as_deref());
+        // A copy the host can replace where it runs updates and restarts like the other apps; any
+        // other macOS copy opens the disk image.
+        match method {
+            Some(install::Method::Dmg) if app.services.stage_replacement.is_some() && app.preferences.update_replaces_app => {
+                Some(install::Method::MacApp)
+            }
+            other => other,
+        }
     }
     #[cfg(target_arch = "wasm32")]
     {
@@ -786,7 +806,7 @@ pub fn start_install(app: &mut SolveApp, ctx: &egui::Context) {
     {
         let ctx = ctx.clone();
         let staging = std::env::temp_dir().join("torno-update");
-        let net = install::Net { get, download, feed };
+        let net = install::Net { get, download, stage: app.services.stage_replacement.clone(), feed };
         let spawned = std::thread::Builder::new().name("update-install".into()).spawn(move || {
             let result = install::run(&release, &kind, &method, std::env::consts::ARCH, &net, &staging, &progress);
             let _ = tx.send(result);
@@ -841,7 +861,7 @@ fn poll_install(app: &mut SolveApp) {
             }
             let _ = dmg;
         }
-        Ok(install::Outcome::Restart(_)) => {}
+        Ok(install::Outcome::Restart(_) | install::Outcome::Replace(_)) => {}
         Err(e) => log::warn!("update: {e}"),
     }
     app.updater.installed = Some(result);
@@ -849,10 +869,18 @@ fn poll_install(app: &mut SolveApp) {
 
 /// Restart now: close (asking about unsaved designs), then start the new version.
 pub fn restart(app: &mut SolveApp) {
-    if let Some(Ok(install::Outcome::Restart(program))) = &app.updater.installed {
-        app.updater.launch = Some((program.clone(), Vec::new()));
-        app.updater.graphics_restart = false;
-        crate::documents::request_quit(app);
+    match &app.updater.installed {
+        Some(Ok(install::Outcome::Restart(program))) => {
+            app.updater.launch = Some((program.clone(), Vec::new()));
+            app.updater.graphics_restart = false;
+            crate::documents::request_quit(app);
+        }
+        Some(Ok(install::Outcome::Replace(package))) => {
+            app.updater.replace = Some(package.clone());
+            app.updater.graphics_restart = false;
+            crate::documents::request_quit(app);
+        }
+        _ => {}
     }
 }
 
@@ -871,6 +899,11 @@ pub fn take_graphics_restart(app: &mut SolveApp) -> bool {
     std::mem::take(&mut app.updater.graphics_restart) && app.updater.launch.is_some()
 }
 
+/// For the host, as Torno exits (macOS): the verified disk image to swap in for `Torno.app`.
+pub fn take_replacement(app: &mut SolveApp) -> Option<PathBuf> {
+    app.updater.replace.take()
+}
+
 /// For the host, as Torno exits: the program to start (the new version, an installer).
 pub fn take_launch(app: &mut SolveApp) -> Option<(PathBuf, Vec<String>)> {
     app.updater.launch.take()
@@ -886,7 +919,7 @@ pub fn button(app: &mut SolveApp, ui: &mut egui::Ui, span: egui::Rect, labeled: 
     // squeezed; the icon alone in a narrow bar.
     let full = torno_ui_text::format("update.button_version", &[("version", &version)]);
     let labels = [full.as_str(), torno_ui_text::tr("update.button")];
-    let (rect, response) = crate::toolbar::offer_pill(ui, span, labeled, &labels, TAB_ROOM, "update", "titlebar:update")?;
+    let (rect, response) = crate::toolbar::offer_pill(ui, span, labeled, &labels, TAB_ROOM, "update", "titlebar:update", false)?;
     if response.backing_on_hover_text(torno_ui_text::format("update.available", &[("version", &version)])).clicked() {
         app.updater.open = !app.updater.open;
     }
@@ -915,7 +948,7 @@ pub fn show(app: &mut SolveApp, ctx: &egui::Context) {
     let downloading = app.updater.job.is_some();
     let state = match &app.updater.installed {
         _ if downloading => State::Downloading,
-        Some(Ok(install::Outcome::Restart(_))) => State::Restart,
+        Some(Ok(install::Outcome::Restart(_) | install::Outcome::Replace(_))) => State::Restart,
         Some(Ok(install::Outcome::Installer(..) | install::Outcome::Opened(_))) => State::Started,
         _ => State::Offer,
     };
@@ -1052,7 +1085,9 @@ pub fn show(app: &mut SolveApp, ctx: &egui::Context) {
 
 /// Manual checks also have a visible result when no update can be offered.
 fn show_check_status(app: &mut SolveApp, ctx: &egui::Context) {
-    let (message, warning) = if !available(app) {
+    let (message, warning) = if app.policy.mandatory.check_for_updates == Some(false) {
+        (torno_ui_text::tr("policy.updates_off").to_string(), false)
+    } else if !available(app) {
         (torno_ui_text::tr("update.check_unavailable").to_string(), false)
     } else {
         match &app.updater.status {
@@ -1095,8 +1130,11 @@ enum State {
 pub fn prefs_rows(app: &mut SolveApp, ui: &mut egui::Ui) {
     let can = available(app);
     let kind = app.updater.kind().clone();
+    let policy = app.policy.mandatory.check_for_updates;
     let note = if kind == InstallKind::Web {
         torno_ui_text::tr("update.prefs_web").to_string()
+    } else if policy == Some(false) {
+        torno_ui_text::tr("policy.updates_off").to_string()
     } else if can && let Some(manager) = app.updater.managed_by().map(str::to_string) {
         torno_ui_text::format("update.prefs_managed", &[("version", current_version()), ("manager", &manager)])
     } else if can {
@@ -1125,7 +1163,8 @@ pub fn prefs_rows(app: &mut SolveApp, ui: &mut egui::Ui) {
                 ui_kit::settings_inline_note(ui, &checked);
             }
         } else {
-            ui_kit::settings_inline_note(ui, torno_ui_text::tr("update.check_unavailable"));
+            let why = if policy == Some(false) { "policy.updates_off" } else { "update.check_unavailable" };
+            ui_kit::settings_inline_note(ui, torno_ui_text::tr(why));
         }
         let busy = app.updater.status == Status::Checking;
         let r = ui_kit::button(ui, torno_ui_text::tr("update.check_now"), ui_kit::Button::Enabled(can && !busy));
@@ -1137,10 +1176,29 @@ pub fn prefs_rows(app: &mut SolveApp, ui: &mut egui::Ui) {
         let help = ui_kit::help_icon(ui, &note);
         crate::scenario::publish_target("prefs:updates_help", help.rect);
     });
-    ui.add_enabled_ui(can, |ui| {
-        let check = ui_kit::checkbox(ui, torno_ui_text::tr("update.check_automatically"), &mut app.preferences.check_updates);
-        crate::scenario::publish_target("prefs:check_updates", check.rect);
-    });
+    match policy {
+        // The organization's answer shows in place of the person's, which is kept for when the policy goes.
+        Some(mut set) => {
+            ui.horizontal_wrapped(|ui| {
+                ui.add_enabled_ui(false, |ui| {
+                    let check = ui_kit::checkbox(ui, torno_ui_text::tr("update.check_automatically"), &mut set);
+                    crate::scenario::publish_target("prefs:check_updates", check.rect);
+                });
+                ui_kit::settings_inline_note(ui, torno_ui_text::tr("policy.set_by_organization"));
+            });
+        }
+        None => {
+            ui.add_enabled_ui(can, |ui| {
+                let check = ui_kit::checkbox(ui, torno_ui_text::tr("update.check_automatically"), &mut app.preferences.check_updates);
+                crate::scenario::publish_target("prefs:check_updates", check.rect);
+            });
+        }
+    }
+    // macOS: the old way (open the disk image and drag the app) stays one checkbox away.
+    if app.services.stage_replacement.is_some() && matches!(app.updater.kind(), InstallKind::MacApp(_)) {
+        let check = ui_kit::checkbox(ui, torno_ui_text::tr("update.replace_app"), &mut app.preferences.update_replaces_app);
+        crate::scenario::publish_target("prefs:update_replaces_app", check.rect);
+    }
     if let Some(v) = offered_or_newer(app)
         && offered(app).is_none()
         && ui_kit::button(ui, torno_ui_text::format("update.show", &[("version", &v)]), ui_kit::Button::Normal).clicked()

@@ -13,12 +13,6 @@ workspace = true
 name = "torno-cli"
 path = "src/main.rs"
 
-# Compatibility alias for the CLI's former name: forwards to torno-cli with a deprecation
-# note on stderr. Shipped in every package for at least one release.
-[[bin]]
-name = "solvecraft-cli"
-path = "src/alias.rs"
-
 [features]
 default = ["raytrace-cpu", "profile"]
 bundled-render-library = ["torno-engine/bundled-render-library"]
@@ -35,6 +29,7 @@ torno-engine = { workspace = true }
 torno-gpu = { workspace = true }
 torno-mcp = { workspace = true }
 log = { workspace = true }
+serde = { workspace = true }
 serde_json = { workspace = true }
 
 [dev-dependencies]
@@ -42,3 +37,4 @@ serde_json = { workspace = true }
 image = { workspace = true }
 # Tests measure meshes at their own tolerances.
 torno-kernel = { workspace = true }
+wat = "1"
