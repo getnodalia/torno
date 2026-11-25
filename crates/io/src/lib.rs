@@ -108,9 +108,9 @@ pub const DESIGN_EXT: &str = "sc";
 /// The design extensions of earlier releases, newest first. Compatibility shim
 /// (docs/compatibility.md): such files still open everywhere a design opens, and Save keeps
 /// writing an opened file under its own name; new designs are saved as [`DESIGN_EXT`].
-pub const LEGACY_DESIGN_EXTS: [&str; 2] = ["solidcraft", "solvecraft"]; // rebrand: keep
+pub const LEGACY_DESIGN_EXTS: [&str; 1] = ["solidcraft"]; // rebrand: keep
 /// Every extension a design file may have, current first.
-pub const DESIGN_EXTS: [&str; 3] = [DESIGN_EXT, LEGACY_DESIGN_EXTS[0], LEGACY_DESIGN_EXTS[1]];
+pub const DESIGN_EXTS: [&str; 2] = [DESIGN_EXT, LEGACY_DESIGN_EXTS[0]];
 
 /// Is this extension (without the dot) one a design file may have (`sc` or a legacy one), any case?
 pub fn is_design_ext(ext: &str) -> bool {
@@ -1931,7 +1931,7 @@ mod tests {
         assert_eq!(Format::from_name("NEW.SC").unwrap(), Format::Design);
         assert!(!is_design_path("/d/old.SOLVECRAFT") && is_design_path("older.solidcraft") && is_design_path("new.sc") && !is_design_path("a.step"));
         assert_eq!(DESIGN_EXT, "sc");
-        assert_eq!(DESIGN_EXTS, ["sc", "solidcraft", "solvecraft"], "new extension first, then every older one"); // rebrand: keep
+        assert_eq!(DESIGN_EXTS, ["sc", "solidcraft"], "new extension first, then every older one"); // rebrand: keep
         assert!(read_stl(&[0u8; 10]).is_err());
         let mut fake = vec![0u8; 84];
         fake[80..84].copy_from_slice(&u32::MAX.to_le_bytes());

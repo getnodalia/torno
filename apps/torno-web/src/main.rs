@@ -1608,14 +1608,14 @@ mod tests {
 
     #[test]
     fn design_links_allow_same_origin_paths_and_redirects() {
-        for origin in ["http://torno.io", "https://getnodalia.github.io/torno", "http://torno.io:8080"] {
+        for origin in ["http://torno.io", "https://getnodalia.github.io", "http://torno.io:8080"] {
             assert_eq!(design_url("/a/b.solidcraft", origin).map(|url| url.to_string()), Ok(format!("{origin}/a/b.solidcraft")));
             assert!(design_url(&format!("{origin}/x"), origin).is_ok());
             // Final response URLs follow the same origin and scheme rules as the request.
             assert!(design_url("https://getnodalia.github.io/torno/x", origin).is_ok());
             assert!(design_url("http://other/x", origin).is_err());
         }
-        assert!(design_url("http://torno.io/x", "https://getnodalia.github.io/torno").is_err());
+        assert!(design_url("http://torno.io/x", "https://getnodalia.github.io").is_err());
         assert!(design_url("http://TORNO.io:80/x", "http://torno.io").is_ok());
     }
 

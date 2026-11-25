@@ -68,23 +68,36 @@ fn parameter_transfer_buttons_use_existing_distinct_tray_arrows_at_1x_and_2x() {
             let (image, out) = capture(&mut h, &format!("parameters-{dark}-{ppp}x"));
             let meshes = h.ctx.tessellate(out.shapes, ppp);
             let t = Tokens::get();
+            let mut drawn = Vec::new();
             for (label, id) in [("Import…", "import_tray"), ("Export CSV…", "export_tray"), ("Export JSON…", "export_tray")] {
                 let button = scenario::rect_of(&format!("dialog:button::{label}")).unwrap();
-                let expected = format!("icon:{id}:{}", (t.space_14 * ppp) as u32);
                 assert_ne!(torno_ui_egui::icon_svg::resolve(id).master, "placeholder");
-                assert!(
-                    meshes.iter().any(|clipped| match &clipped.primitive {
-                        egui::epaint::Primitive::Mesh(mesh) =>
-                            h.ctx.tex_manager().read().meta(mesh.texture_id).is_some_and(|meta| meta.name == expected)
-                                && mesh.vertices.iter().any(|v| button.contains(v.pos)),
-                        _ => false,
-                    }),
-                    "{label} must render {expected} inside its own button"
+                // The interface icons are Nodalia Design's vector art, drawn as plain geometry
+                // beside the label rather than as a named texture: the geometry inside the icon's
+                // square (clear of the button's own outline) is the icon.
+                let icon = egui::Rect::from_min_size(
+                    egui::pos2(button.left() + t.space_10, button.top() + 3.0),
+                    egui::vec2(t.space_14, button.height() - 6.0),
                 );
+                let mut shape: Vec<(i32, i32)> = meshes
+                    .iter()
+                    .filter_map(|clipped| match &clipped.primitive {
+                        egui::epaint::Primitive::Mesh(mesh) => Some(mesh),
+                        _ => None,
+                    })
+                    .flat_map(|mesh| mesh.vertices.iter())
+                    .filter(|v| icon.contains(v.pos))
+                    .map(|v| (((v.pos.x - icon.left()) * 10.0).round() as i32, ((v.pos.y - icon.top()) * 10.0).round() as i32))
+                    .collect();
+                shape.sort_unstable();
+                shape.dedup();
+                assert!(!shape.is_empty(), "{label} must draw its {id} icon inside its own button");
+                drawn.push((label, shape));
                 let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/popup-regressions");
                 crop(&image, button, ppp).save(dir.join(format!("{id}-{label}-{dark}-{ppp}x.png"))).unwrap();
             }
             assert_ne!(torno_ui_egui::icon_svg::resolve("import_tray").master, torno_ui_egui::icon_svg::resolve("export_tray").master);
+            assert_ne!(drawn[0].1, drawn[1].1, "Import… and Export CSV… must not draw the same arrow");
         }
     }
 }

@@ -261,7 +261,7 @@ fn eval_and_inspect_reject_invalid_options_before_script_execution_or_reporting(
 #[test]
 fn cli_loads_both_design_encodings_by_contents() {
     let dir = Scratch::new();
-    for extension in ["sc", LEGACY_EXT, "solvecraft", "json"] {
+    for extension in ["sc", LEGACY_EXT, "json"] {
         let saved = dir.0.join(format!("box.{extension}"));
         json_output(cli().arg("run").arg(dir.script()).arg("--save").arg(&saved).output().unwrap());
         let bytes = std::fs::read(&saved).unwrap();

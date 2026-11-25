@@ -574,7 +574,7 @@ mod tests {
     fn import_filter_groups_hold_the_expected_extensions() {
         let native = import_filters(true);
         let find = |label: &str| native.iter().find(|(l, _)| *l == label).map(|(_, e)| e.clone()).unwrap_or_default();
-        assert_eq!(find("Torno design (container or JSON)"), vec!["sc", "solidcraft", "solvecraft", "json"]); // rebrand: keep
+        assert_eq!(find("Torno design (container or JSON)"), vec!["sc", "solidcraft", "json"]); // rebrand: keep
         assert_eq!(find("STEP"), vec!["step", "stp"]);
         assert_eq!(find("IGES"), vec!["igs", "iges"]);
         assert_eq!(find("FreeCAD and Rhino"), vec!["fcstd", "3dm"]);

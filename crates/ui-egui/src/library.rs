@@ -1666,11 +1666,11 @@ mod tests {
     fn lists_projects_and_designs_without_reading_or_modifying_them() {
         let h = Harness::new();
         std::fs::create_dir(h.dir.join("Project A")).unwrap();
-        let design = h.dir.join("Plate.TORNO");
+        let design = h.dir.join("Plate.SC");
         std::fs::write(&design, b"deliberately not a design").unwrap();
         std::fs::write(h.dir.join("notes.txt"), b"keep").unwrap();
         let listing = read_folder(&h.dir, &h.dir).unwrap();
-        assert_eq!(listing.entries.iter().map(|e| e.name.as_str()).collect::<Vec<_>>(), ["Project A", "Plate.TORNO"]);
+        assert_eq!(listing.entries.iter().map(|e| e.name.as_str()).collect::<Vec<_>>(), ["Project A", "Plate.SC"]);
         assert!(listing.entries[0].folder);
         assert_eq!(std::fs::read(design).unwrap(), b"deliberately not a design");
         assert!(read_folder(&h.dir, h.dir.parent().unwrap()).is_err());
