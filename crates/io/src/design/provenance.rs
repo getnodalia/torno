@@ -1097,13 +1097,13 @@ mod tests {
     /// not only by the software signer above.
     const GNUPG_KEY: &str = "9833046af51ed316092b06010401da470f010107409364c141ee4008c6ed8f3b302141e4f3450d6eea7ed026f2f676239e8a2a66b9b429536f6c696443726166742054657374203c7465737440736f6c696463726166742e696e76616c69643e88af0413160a0057162104900d0fc44f3044c168362cb200187b908ed1dab405026af51ed31b14800000000004000e6d616e75322c322e352b312e31322c302c33021b03050b0908070202220206150a09080b020416020301021e07021780000a091000187b908ed1dab4fb2a00ff6926fd5ff3f0d9d8ccef340f691b1666b2bc7207527b790ad086a22964a8db0300ff7c02f0fe395e622cae1bf20e1904af348f962f598cc66ddf3427a5432b0b510b";
     const GNUPG_SIGNATURE: &str = "8891040016080039162104900d0fc44f3044c168362cb200187b908ed1dab405026af51ed41b14800000000004000e6d616e75322c322e352b312e31322c302c33000a091000187b908ed1dab408ad0100b35fc19bc33b819684c916ea412de843e9600932a90e339dbc671fad2c7be0bb00fd164d7e30302521a6936a6ac8f6e002fdaf9b5e12ed389de32e62c214a20c6601";
-    const GNUPG_MANIFEST: &[u8] = b"torno-provenance openpgp test manifest 2026-11";
+    const GNUPG_MANIFEST: &[u8] = b"solidcraft-provenance openpgp test manifest 2026-11"; // rebrand: keep: the signature covers these exact bytes
 
     #[test]
     fn gnupg_ed25519_detached_signature_verifies() {
         let (fingerprint, user_id) = verify_openpgp(&hex_bytes(GNUPG_KEY), &hex_bytes(GNUPG_SIGNATURE), GNUPG_MANIFEST).unwrap();
         assert_eq!(fingerprint, "900D0FC44F3044C168362CB200187B908ED1DAB4");
-        assert_eq!(user_id.as_deref(), Some("Torno Test <test@torno.invalid>"));
+        assert_eq!(user_id.as_deref(), Some("SolidCraft Test <test@solidcraft.invalid>")); // rebrand: keep: the key was made with this name
     }
 
     #[test]
