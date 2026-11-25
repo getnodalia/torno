@@ -573,7 +573,8 @@ jobs:
       # The same for the shared viewport crate's own GPU tests, which read no Torno variable.
       VIEWPORT_TEST_GPU: software
       VIEWPORT_TEST_REQUIRE_GPU: "1"
-      ACTION_MATRIX_JOBS: "12"
+      # One worker per vCPU of this runner; nextest.toml reserves the same number of its threads.
+      ACTION_MATRIX_JOBS: "4"
       CARGO_INCREMENTAL: "0"
       RUSTC_WRAPPER: sccache
       SCCACHE_DIR: /home/runner/.cache/sccache
@@ -584,6 +585,11 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends mesa-vulkan-drivers libvulkan1
+      # This job has died with "The hosted runner lost communication with the server" at 33, 64,
+      # 70, 77 and 83 minutes, mid-test and with no log: the runner ran out of memory. Swap makes
+      # a burst slow instead of fatal.
+      - name: Add swap
+        run: scripts/ci/add-swap.sh
       - name: Size parallel compiles to the job's memory
         run: scripts/ci/build-jobs.sh
       - uses: dtolnay/rust-toolchain@stable
