@@ -555,12 +555,15 @@ jobs:
     name: Native Linux tests
     needs: changes
     if: ${{ !cancelled() && needs.changes.result == 'success' && needs.changes.outputs.native == 'true' }}
-    # Builds the tests and runs them in one job on a big runner: there is no archive to upload
+    # Builds the tests and runs them in one job: there is no archive to upload
     # and download (3 GB on a full run), and the job starts beside the repository checks, not
     # after them. nextest hands tests to its threads as they free up, the slowest first (priority
     # in .config/nextest.toml), so they start at once and no core idles at the end.
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    # A standard runner has 4 vCPUs, and a cold build (no cache: only main saves it) compiles about
+    # 650 crates before the first test starts, which took more than 60 minutes. Main therefore gets
+    # room to finish once and save the cache; pull requests restore it and need far less.
+    timeout-minutes: ${{ github.event_name == 'pull_request' && 90 || 180 }}
     env:
       # Pictures (snapshots, screenshots, ui.render, the viewport's offscreen tests) are drawn on
       # the GPU. The runner has none: Mesa's lavapipe (software Vulkan) draws them, and a test that
