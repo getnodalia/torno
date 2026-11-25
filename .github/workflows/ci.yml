@@ -586,10 +586,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends mesa-vulkan-drivers libvulkan1
       # This job has died with "The hosted runner lost communication with the server" at 33, 64,
-      # 70, 77 and 83 minutes, mid-test and with no log: the runner ran out of memory. Swap makes
-      # a burst slow instead of fatal.
+      # 69, 70, 77 and 83 minutes, mid-test and with no log: the runner ran out of memory, disk or
+      # CPU for its own agent. Swap, a freed disk and a niced test run each remove one cause.
       - name: Add swap
         run: scripts/ci/add-swap.sh
+      - name: Free disk space
+        run: scripts/ci/free-disk.sh
       - name: Size parallel compiles to the job's memory
         run: scripts/ci/build-jobs.sh
       - uses: dtolnay/rust-toolchain@stable
@@ -645,7 +647,9 @@ jobs:
           # that passes. nextest's exit code 100 is "tests failed"; any other is its own error
           # (a build error, a bad filter) and fails the step at once.
           status=0
-          cargo nextest run "${scope[@]}" --cargo-profile ci --locked --profile ci --no-tests=pass \
+          # `nice` keeps the runner's own agent responsive while the tests use every core: a starved
+          # agent is another way to lose "communication with the server".
+          nice -n 10 cargo nextest run "${scope[@]}" --cargo-profile ci --locked --profile ci --no-tests=pass \
             --ignore-default-filter -E "($base) & not (package(=torno-gpu) & test(/^path::/))" || status=$?
           if [ "$status" -ne 0 ] && [ "$status" -ne 100 ]; then exit "$status"; fi
           cargo xtask known-failing --junit "$junit"
