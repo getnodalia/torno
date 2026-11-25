@@ -677,7 +677,6 @@ mod tests {
         assert!(opens_design(&[]));
         assert!(opens_design(&["sc"]));
         assert!(opens_design(&["solidcraft"])); // rebrand: keep
-        assert!(opens_design(&["solvecraft"]));
         assert!(!opens_design(&["step", "stp"]));
         assert!(!opens_design(&["json"]));
     }

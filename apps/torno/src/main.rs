@@ -2578,7 +2578,11 @@ mod msaa_tests {
             assert_eq!(h.call("ui.prefs", json!({"msaa": 1}))["ok"], true);
             assert_eq!(h.call("ui.prefs", json!({"button": "ok"}))["ok"], true);
             let after: Value = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
-            assert_eq!(after, json!({"window_system": choice, "adapter": "Selected GPU", "backend": "vulkan", "msaa": 1}));
+            assert_eq!(
+                after,
+                json!({"window_system": choice, "adapter": "Selected GPU", "backend": "vulkan", "msaa": 1, "titlebar": "app"}),
+                "the window controls choice is saved beside the graphics ones"
+            );
 
             let mut normal = Harness::new();
             super::restore_preferences(&mut normal.app, Some(&stored_ui), Some(&after), false);
