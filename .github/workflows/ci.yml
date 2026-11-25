@@ -587,11 +587,14 @@ jobs:
       - name: Size parallel compiles to the job's memory
         run: scripts/ci/build-jobs.sh
       - uses: dtolnay/rust-toolchain@stable
-      # Main saves the cache; every other run restores it, read-only.
+      # Main saves the cache; every other run restores it, read-only. It saves even when a test
+      # fails: with tests failing on main, the default (save only after a passing job) never
+      # saved one, and every run started cold.
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           key: native-tests
           save-if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' }}
+          cache-on-failure: true
       - name: Set up compiler cache
         id: sccache
         uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
