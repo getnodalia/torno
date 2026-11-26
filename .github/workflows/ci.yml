@@ -577,7 +577,7 @@ jobs:
         run: scripts/ci/free-disk.sh
       - name: Size parallel compiles to the job's memory
         run: scripts/ci/build-jobs.sh
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
       # Only this job saves the cache (main and develop); the test shards restore it, read-only.
       # It saves even if the job fails part-way, so a build that dies late still leaves its work.
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
@@ -655,7 +655,7 @@ jobs:
         run: scripts/ci/free-disk.sh
       - name: Size parallel compiles to the job's memory
         run: scripts/ci/build-jobs.sh
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
       # The shards restore the cache Native Linux test build saved on main (a pull request restores
       # main's last one) and save nothing: seven jobs would each upload the same several gigabytes.
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
@@ -781,7 +781,7 @@ jobs:
         run: scripts/ci/free-disk.sh
       - name: Size parallel compiles to the job's memory
         run: scripts/ci/build-jobs.sh
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
       # The shards restore the cache Native Linux test build saved on main (a pull request restores
       # main's last one) and save nothing: seven jobs would each upload the same several gigabytes.
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
