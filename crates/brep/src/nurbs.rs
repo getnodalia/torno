@@ -129,8 +129,8 @@ fn basis_derivatives(span: usize, t: f64, p: usize, nd: usize, u: &[f64]) -> Vec
         }
     }
     let mut fac = p as f64;
-    for k in 1..=nd {
-        for v in ders[k].iter_mut() {
+    for (k, row) in ders.iter_mut().enumerate().take(nd + 1).skip(1) {
+        for v in row.iter_mut() {
             *v *= fac;
         }
         fac *= (p - k) as f64;
@@ -219,12 +219,12 @@ impl NurbsCurve {
         // Homogeneous derivatives A^(k) (xyz weighted) and w^(k).
         let mut a = vec![Vec3::ZERO; order + 1];
         let mut w = vec![0.0; order + 1];
-        for k in 0..=nd {
-            for j in 0..=p {
+        for (k, row) in ders.iter().enumerate().take(nd + 1) {
+            for (j, &basis) in row.iter().enumerate().take(p + 1) {
                 let idx = span - p + j;
                 let wi = self.weights[idx];
-                a[k] += self.points[idx] * (ders[k][j] * wi);
-                w[k] += ders[k][j] * wi;
+                a[k] += self.points[idx] * (basis * wi);
+                w[k] += basis * wi;
             }
         }
         let mut c = vec![Vec3::ZERO; order + 1];
@@ -390,7 +390,7 @@ impl NurbsSurface {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::f64::consts::{FRAC_1_SQRT_2, PI};
+    use std::f64::consts::FRAC_1_SQRT_2;
 
     /// A quarter of the unit circle as a rational quadratic Bézier: exactly representable.
     fn quarter_circle() -> NurbsCurve {
@@ -411,8 +411,8 @@ mod tests {
             let span = find_span(6, 3, t, &u);
             let d = basis_derivatives(span, t, 3, 3, &u);
             assert!((d[0].iter().sum::<f64>() - 1.0).abs() < 1e-14);
-            for k in 1..=3 {
-                assert!(d[k].iter().sum::<f64>().abs() < 1e-11, "k={k} t={t}");
+            for (k, row) in d.iter().enumerate().skip(1) {
+                assert!(row.iter().sum::<f64>().abs() < 1e-11, "k={k} t={t}");
             }
         }
     }
@@ -539,7 +539,6 @@ mod tests {
                 assert!(d[0][1].distance(Vec3::new(0.0, 0.0, 2.0)) < 1e-13);
             }
         }
-        assert!(PI > 3.0);
     }
 
     #[test]

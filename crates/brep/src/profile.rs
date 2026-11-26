@@ -276,12 +276,11 @@ impl Profile {
                 }
             }
             for (j, other) in polys.iter().enumerate().skip(1) {
-                if i != j {
-                    if let Some(&p) = hole.first() {
-                        if inside_even_odd(&[other], p)? {
-                            return Err(BrepError::Topology(format!("hole {} lies inside hole {}", i - 1, j - 1)));
-                        }
-                    }
+                if i != j
+                    && let Some(&p) = hole.first()
+                    && inside_even_odd(&[other], p)?
+                {
+                    return Err(BrepError::Topology(format!("hole {} lies inside hole {}", i - 1, j - 1)));
                 }
             }
         }

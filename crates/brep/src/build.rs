@@ -227,13 +227,15 @@ pub fn revolve(profile: &Profile2, frame: &Frame, tol: &Tolerance) -> Result<Bre
     // An arc between two axis points is cut in two at its middle so that each half has an off-axis end.
     let mut split: Vec<Piece> = Vec::with_capacity(pieces.len() + 2);
     for p in pieces {
-        if let PieceKind::Arc { center, radius, a0, sweep } = p.kind {
-            if !p.is_full_circle() && on_axis(p.from) && on_axis(p.to) {
-                let mid = p.at(0.5);
-                split.push(Piece { from: p.from, to: mid, kind: PieceKind::Arc { center, radius, a0, sweep: sweep / 2.0 } });
-                split.push(Piece { from: mid, to: p.to, kind: PieceKind::Arc { center, radius, a0: a0 + sweep / 2.0, sweep: sweep / 2.0 } });
-                continue;
-            }
+        if let PieceKind::Arc { center, radius, a0, sweep } = p.kind
+            && !p.is_full_circle()
+            && on_axis(p.from)
+            && on_axis(p.to)
+        {
+            let mid = p.at(0.5);
+            split.push(Piece { from: p.from, to: mid, kind: PieceKind::Arc { center, radius, a0, sweep: sweep / 2.0 } });
+            split.push(Piece { from: mid, to: p.to, kind: PieceKind::Arc { center, radius, a0: a0 + sweep / 2.0, sweep: sweep / 2.0 } });
+            continue;
         }
         split.push(p);
     }

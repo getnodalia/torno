@@ -448,12 +448,13 @@ mod tests {
                 assert!(pr.distance <= brute + 1e-9, "{name}: {} vs brute {brute}", pr.distance);
                 // The residual is along the normal (not for the cone at the apex).
                 let res = p - pr.point;
-                if res.norm() > 1e-9 && pr.uv.y.abs() > 1e-9 {
-                    if let Some(n) = s.normal(pr.uv.x, pr.uv.y) {
-                        let cross = res.cross(n).norm() / res.norm();
-                        let apex = matches!(s, Surface::Cone(_)) && pr.uv.y.abs() < 1e-6;
-                        assert!(cross < 1e-7 || apex, "{name}: residual not normal ({cross})");
-                    }
+                if res.norm() > 1e-9
+                    && pr.uv.y.abs() > 1e-9
+                    && let Some(n) = s.normal(pr.uv.x, pr.uv.y)
+                {
+                    let cross = res.cross(n).norm() / res.norm();
+                    let apex = matches!(s, Surface::Cone(_)) && pr.uv.y.abs() < 1e-6;
+                    assert!(cross < 1e-7 || apex, "{name}: residual not normal ({cross})");
                 }
             }
         }

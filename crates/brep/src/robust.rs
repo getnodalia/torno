@@ -120,6 +120,7 @@ impl Exp {
         let (x, y) = two_diff(a, b);
         Exp::from_pair(y, x)
     }
+    #[cfg(test)]
     fn prod(a: f64, b: f64) -> Exp {
         let (x, y) = two_product(a, b);
         Exp::from_pair(y, x)
@@ -199,6 +200,7 @@ impl Exp {
         }
         acc
     }
+    #[cfg(test)]
     fn sign(&self) -> Sign {
         self.0.last().map_or(Sign::Zero, |&x| Sign::of(x))
     }

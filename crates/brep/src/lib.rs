@@ -4,6 +4,7 @@
 #![forbid(unsafe_code)]
 
 pub mod build;
+pub mod check;
 pub mod curve;
 pub mod error;
 pub mod mass;
