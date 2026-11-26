@@ -128,7 +128,7 @@ thread_local! {
 const LOCAL_PREFIX: &str = "torno.file.";
 /// Local-storage files kept by earlier releases (compatibility shim, docs/compatibility.md):
 /// still listed and opened; removing one removes either key.
-const LEGACY_LOCAL_PREFIX: &str = "solidcraft.file."; // rebrand: keep
+const LEGACY_LOCAL_PREFIX: &str = "solidcraft.file.";
 
 fn local() -> Result<web_sys::Storage, String> {
     web_sys::window().and_then(|w| w.local_storage().ok().flatten()).ok_or_else(|| "this browser keeps no local storage".to_string())

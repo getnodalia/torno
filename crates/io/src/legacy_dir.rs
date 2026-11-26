@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 pub const APP_ID: &str = "dev.danielmiguelt.Torno";
 /// The app id of releases before the rename to Torno (compatibility shim, docs/compatibility.md).
 /// eframe kept the window state under it, so it is also the old settings key.
-pub const LEGACY_APP_ID: &str = "io.tangencylabs.solidcraft"; // rebrand: keep
+pub const LEGACY_APP_ID: &str = "io.tangencylabs.solidcraft";
 /// Every earlier app id, newest first (compatibility shim, docs/compatibility.md):
 /// `LEGACY_APP_ID`, then the ids of releases long before it.
 pub const PREVIOUS_APP_IDS: [&str; 3] = [LEGACY_APP_ID, "ai.storyteller.solidcraft", "ai.storyteller.solvecraft"];
@@ -111,7 +111,7 @@ mod tests {
         assert_eq!(
             flatpak_twins(&ours, id, home),
             [
-                home.join(".var/app/io.tangencylabs.solidcraft/data/torno"), // rebrand: keep
+                home.join(".var/app/io.tangencylabs.solidcraft/data/torno"),
                 home.join(".var/app/ai.storyteller.solidcraft/data/torno"),
                 home.join(".var/app/ai.storyteller.solvecraft/data/torno")
             ]

@@ -1124,7 +1124,7 @@ fn graphics_path() -> Option<std::path::PathBuf> {
 /// kept everything under an old app id's `~/.var/app` folder; those copies come first, newest
 /// first. The old folders are never changed.
 fn adopt_legacy_settings() {
-    let (Some(current), Some(legacy)) = (settings_dir().ok().flatten(), eframe::storage_dir("SolidCraft")) else { return }; // rebrand: keep
+    let (Some(current), Some(legacy)) = (settings_dir().ok().flatten(), eframe::storage_dir("SolidCraft")) else { return };
     let legacy_eframe = eframe::storage_dir(torno_engine::io::LEGACY_APP_ID);
     let old_flatpak = torno_engine::io::legacy_flatpak_paths(&current);
     if let Err(e) = adopt_settings(&current, &old_flatpak, &legacy, legacy_eframe.as_deref()) {
@@ -2640,7 +2640,7 @@ mod msaa_tests {
     fn first_launch_adopts_the_previous_release_settings() {
         let d = std::env::temp_dir().join(format!("torno-adopt-settings-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&d);
-        let (current, legacy, legacy_eframe) = (d.join("torno"), d.join("solidcraft"), d.join("io.tangencylabs.solidcraft")); // rebrand: keep
+        let (current, legacy, legacy_eframe) = (d.join("torno"), d.join("solidcraft"), d.join("io.tangencylabs.solidcraft"));
         std::fs::create_dir_all(&legacy).unwrap();
         std::fs::create_dir_all(&legacy_eframe).unwrap();
         std::fs::write(legacy.join("graphics.json"), r#"{"msaa":8}"#).unwrap();

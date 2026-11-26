@@ -1,7 +1,7 @@
 # Snap package (torno-<version>-linux-<arch>.snap on every GitHub release, and the Snap
 # Store when its credentials are configured). Build it with packaging/linux/snap-pack.sh.
 #
-# Like the Flatpak, it repackages the release's own Linux tarball (built on Ubuntu 22.04 by
+# It repackages the release's own Linux tarball (built on Ubuntu 22.04 by
 # package.sh) instead of compiling Rust: the same binaries as the AppImage/deb/rpm. snap-pack.sh
 # unpacks the tarball into stage/ next to snap/ and writes the package version to version.txt.
 # The binaries need glibc >= 2.35 (core24 has 2.39) and load X11, Wayland, xkbcommon and Vulkan

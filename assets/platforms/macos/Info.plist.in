@@ -43,9 +43,9 @@
       <key>CFBundleTypeName</key>
       <string>Torno design</string>
       <key>CFBundleTypeExtensions</key>
-      <!-- solidcraft: designs saved before .sc; solvecraft: before the rename (compatibility rebrand: keep
+      <!-- solidcraft: designs saved before .sc; solvecraft: before the rename (compatibility
            shims, docs/compatibility.md). -->
-      <array><string>sc</string><string>solidcraft</string><string>solvecraft</string></array> <!-- rebrand: keep -->
+      <array><string>sc</string><string>solidcraft</string><string>solvecraft</string></array>
       <key>LSItemContentTypes</key>
       <array><string>dev.danielmiguelt.Torno.design</string></array>
       <key>CFBundleTypeRole</key>
@@ -77,7 +77,7 @@
       <key>UTTypeTagSpecification</key>
       <dict>
         <key>public.filename-extension</key>
-        <array><string>sc</string><string>solidcraft</string><string>solvecraft</string></array> <!-- rebrand: keep -->
+        <array><string>sc</string><string>solidcraft</string><string>solvecraft</string></array>
         <key>public.mime-type</key>
         <array><string>application/x-torno</string></array>
       </dict>

@@ -58,8 +58,9 @@ jobs:
       tag: ${{ needs.tag.outputs.tag }}
 
   # A release published with GITHUB_TOKEN does not trigger `release` workflows, so start the ones
-  # that follow a publication here: the Flatpak repository and site, the Snap Store promotion and
-  # the WinGet submission (each skips what its secrets don't allow). Not for pre-releases.
+  # that follow a publication here: the Pages site (the web app channels read the latest release),
+  # the Snap Store promotion and the WinGet submission (each skips what its secrets don't allow).
+  # Not for pre-releases.
   after-publish:
     needs: [tag, publish]
     if: needs.tag.outputs.prerelease != 'true'
@@ -73,6 +74,6 @@ jobs:
           GH_REPO: ${{ github.repository }}
           TAG: ${{ needs.tag.outputs.tag }}
         run: |
-          gh workflow run flatpak-pages.yml --ref main -f release_tag="$TAG"
+          gh workflow run pages.yml --ref main
           gh workflow run snap-store.yml --ref main
           gh workflow run winget.yml --ref main -f tag="$TAG"

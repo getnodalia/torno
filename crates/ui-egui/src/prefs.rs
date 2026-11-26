@@ -18,7 +18,7 @@ use torno_viewport::Camera;
 pub const STORAGE_KEY: &str = "torno.prefs";
 /// The key earlier releases used. Compatibility shim (docs/compatibility.md): read when the
 /// current key is missing, never written.
-pub const LEGACY_STORAGE_KEY: &str = "solidcraft.prefs"; // rebrand: keep
+pub const LEGACY_STORAGE_KEY: &str = "solidcraft.prefs";
 
 /// The stored preferences.
 pub fn stored(get: impl Fn(&str) -> Option<String>) -> Option<String> {

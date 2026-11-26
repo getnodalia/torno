@@ -1,6 +1,6 @@
 ---
 name: torno-packaging
-description: "Use when preparing or shipping a Torno release, changing installers or packages (AppImage, MSI, dmg, Flatpak, Snap, WinGet, Nix, FreeBSD, web), release asset names, signing or the Pages deployment."
+description: "Use when preparing or shipping a Torno release, changing installers or packages (AppImage, MSI, dmg, Snap, WinGet, Nix, FreeBSD, web), release asset names, signing or the Pages deployment."
 ---
 
 # Packaging and releases
@@ -23,7 +23,7 @@ A pull request that bumps the version and adds its notes (`vX.Y.Z.md` in `docs/r
 ## Names that must stay stable
 - Assets are `torno-<version>-...` and are also attached without the version (`torno-windows-x64.msi`). The README links and the in-app update check (`crates/ui-egui/src/update.rs`) pick them by name; renaming one breaks both.
 - The old product name survives only in the shims in `docs/compatibility.md`. Do not rewrite published assets, checksums, tags or historical notes.
-- Documentation, the browser app and the Flatpak repository publish under project Pages `/torno/`. Add no old-name Pages aliases.
+- Documentation and the browser app publish under project Pages `/torno/`. Add no old-name Pages aliases.
 
 ## Where things live
 - `packaging/` holds the per-platform scripts (`packaging/linux`, `packaging/windows`, `packaging/macos`, `packaging/freebsd`, `packaging/web`); `packaging/tests` checks them.

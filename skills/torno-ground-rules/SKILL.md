@@ -29,6 +29,6 @@ The rules that cannot be broken in a PR. `AGENTS.md` lists them in one line each
 ## The name
 - Torno everywhere: crates `torno-*`, binaries `torno` and `torno-cli`, `.sc` designs (`.solidcraft` still opens), the `solidcraft/N` format tag, `TORNO_*` environment variables, settings and recovery folders, the MCP server name, docs, CI and packaging.
 - The old name survives only in the compatibility shims listed in `docs/compatibility.md`. Do not add new uses of it.
-- Public docs, web and Flatpak deployments use project Pages `/torno/`. Do not add permanent old-name Pages aliases.
+- Public docs and web deployments use project Pages `/torno/`. Do not add permanent old-name Pages aliases.
 - Labels, parameter docs, messages and docs use the terms in the glossary (`docs/book/src/reference/glossary.md`): one term for each idea. A change that adds a new idea adds its term there.
 - Units are millimetres and radians internally; Z is up.

@@ -26,7 +26,7 @@ use torno_engine::Session;
 use torno_engine::doc::{FaceAttachmentStatus, Feature, FeatureKind, ModelBody, ModelState, PlaneRef, naming};
 
 /// The extension designs had before `.sc`, which the corpus files still carry.
-const LEGACY_EXT: &str = "solidcraft"; // rebrand: keep
+const LEGACY_EXT: &str = "solidcraft";
 
 fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..").canonicalize().unwrap()
@@ -51,14 +51,14 @@ fn designs() -> Vec<(String, Source)> {
             out.push((format!("{prefix}/{stem}"), Source::File(p)));
         }
     };
-    add("corpus", root.join("apps/torno-cli/tests/corpus"), "solidcraft"); // rebrand: keep
+    add("corpus", root.join("apps/torno-cli/tests/corpus"), "solidcraft");
     add("examples", root.join("examples"), "json");
     add("examples", root.join("examples/acceptance"), "json");
     add("regressions", root.join("examples/regressions"), "json");
     add("demo", root.join("examples/demo"), "json");
     add("typical", root.join("tests/action_matrix/designs"), "json");
-    add("demo", root.join("tests/action_matrix/designs"), "solidcraft"); // rebrand: keep
-    add("fixtures", root.join("crates/engine/src/tests/fixtures"), "solidcraft"); // rebrand: keep
+    add("demo", root.join("tests/action_matrix/designs"), "solidcraft");
+    add("fixtures", root.join("crates/engine/src/tests/fixtures"), "solidcraft");
     add("hole_matrix", root.join("tests/hole_matrix/old-0.9"), "json");
     add("taper", root.join("tests/taper/before-1014"), "json");
     add("projection", root.join("tests/projection/before-1508"), "json");

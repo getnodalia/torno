@@ -87,7 +87,7 @@ fn designs() -> Vec<(String, PathBuf)> {
             out.push((format!("{prefix}/{stem}"), p));
         }
     };
-    add("corpus", root.join("apps/torno-cli/tests/corpus"), "solidcraft"); // rebrand: keep
+    add("corpus", root.join("apps/torno-cli/tests/corpus"), "solidcraft");
     add("examples", root.join("examples"), "json");
     add("examples", root.join("examples/acceptance"), "json");
     add("regressions", root.join("examples/regressions"), "json");
