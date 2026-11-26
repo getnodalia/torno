@@ -101,7 +101,6 @@ moxcms = { version = "0.8.1", default-features = false, features = ["extended_ra
 semver = "1"
 
 # constrained Delaunay + Ruppert refinement for trimmed faces (MIT OR Apache-2.0).
-spade = { version = "2.15", default-features = false, features = ["std"] }
 rayon = "1.12"
 # Native render-memory admission; RAM-only queries through a safe MIT-licensed API.
 sysinfo = { version = "0.40.1", default-features = false, features = ["system"] }
