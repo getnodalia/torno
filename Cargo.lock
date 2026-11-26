@@ -3763,6 +3763,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "nodalia-brep"
+version = "0.2.1"
+
+[[package]]
 name = "nodalia-plugin"
 version = "0.2.1"
 dependencies = [
