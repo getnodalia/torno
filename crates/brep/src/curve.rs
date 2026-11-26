@@ -129,11 +129,13 @@ impl Curve {
     /// `P(t), P'(t), …` up to `order` (`order + 1` vectors).
     pub fn derivatives(&self, t: f64, order: usize) -> Vec<Vec3> {
         match self {
-            Curve::Line(l) => (0..=order).map(|k| match k {
-                0 => l.origin + l.direction * t,
-                1 => l.direction,
-                _ => Vec3::ZERO,
-            }).collect(),
+            Curve::Line(l) => (0..=order)
+                .map(|k| match k {
+                    0 => l.origin + l.direction * t,
+                    1 => l.direction,
+                    _ => Vec3::ZERO,
+                })
+                .collect(),
             Curve::Circle(Circle { frame, radius }) => trig_derivatives(frame, *radius, *radius, t, order),
             Curve::Ellipse(e) => trig_derivatives(&e.frame, e.major, e.minor, t, order),
             Curve::Nurbs(n) => n.derivatives(t, order),
@@ -211,7 +213,13 @@ impl Curve {
         let d2: Vec<f64> = ts.iter().map(|&t| (self.point(t) - p).norm_sq()).collect();
         let cyclic_ts = |i: isize| -> f64 {
             // Sample i may be -1 or seeds+1 when the curve is a full period: continue periodically.
-            if i < 0 { ts[0] - (ts[1] - ts[0]) } else if i as usize > seeds { ts[seeds] + (ts[1] - ts[0]) } else { ts[i as usize] }
+            if i < 0 {
+                ts[0] - (ts[1] - ts[0])
+            } else if i as usize > seeds {
+                ts[seeds] + (ts[1] - ts[0])
+            } else {
+                ts[i as usize]
+            }
         };
         let mut best = make(t0, true);
         let mut consider = |c: CurveProjection| {
@@ -359,7 +367,13 @@ fn arc_clamp(theta: f64, t0: f64, t1: f64, dist: impl Fn(f64) -> f64) -> f64 {
     }
     let mid = 0.5 * (t0 + t1);
     let t = nearest_periodic(theta, mid, TAU);
-    if t >= t0 && t <= t1 { t } else if dist(t0) <= dist(t1) { t0 } else { t1 }
+    if t >= t0 && t <= t1 {
+        t
+    } else if dist(t0) <= dist(t1) {
+        t0
+    } else {
+        t1
+    }
 }
 
 fn trig_derivatives(frame: &Frame, a: f64, b: f64, t: f64, order: usize) -> Vec<Vec3> {
@@ -395,7 +409,13 @@ mod tests {
         Curve::Nurbs(
             NurbsCurve::clamped_uniform(
                 3,
-                vec![Vec3::new(0.0, 0.0, 0.0), Vec3::new(2.0, 3.0, 0.0), Vec3::new(4.0, -2.0, 1.0), Vec3::new(6.0, 2.0, 0.0), Vec3::new(8.0, 0.0, 2.0)],
+                vec![
+                    Vec3::new(0.0, 0.0, 0.0),
+                    Vec3::new(2.0, 3.0, 0.0),
+                    Vec3::new(4.0, -2.0, 1.0),
+                    Vec3::new(6.0, 2.0, 0.0),
+                    Vec3::new(8.0, 0.0, 2.0),
+                ],
             )
             .unwrap(),
         )

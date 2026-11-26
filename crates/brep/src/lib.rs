@@ -11,6 +11,8 @@ pub mod quad;
 pub mod robust;
 pub mod surface;
 pub mod tol;
+pub mod topology;
+pub mod uv;
 
 pub use error::{BrepError, Result};
 pub use math::{Frame, Mat3, Point3, Transform, Vec2, Vec3};

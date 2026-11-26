@@ -285,7 +285,8 @@ fn orient3d_det(a: [f64; 3], b: [f64; 3], c: [f64; 3], d: [f64; 3]) -> f64 {
     let adxbdy = adx * bdy;
     let bdxady = bdx * ady;
     let det = adz * (bdxcdy - cdxbdy) + bdz * (cdxady - adxcdy) + cdz * (adxbdy - bdxady);
-    let permanent = ((bdxcdy.abs() + cdxbdy.abs()) * adz.abs()) + ((cdxady.abs() + adxcdy.abs()) * bdz.abs()) + ((adxbdy.abs() + bdxady.abs()) * cdz.abs());
+    let permanent =
+        ((bdxcdy.abs() + cdxbdy.abs()) * adz.abs()) + ((cdxady.abs() + adxcdy.abs()) * bdz.abs()) + ((adxbdy.abs() + bdxady.abs()) * cdz.abs());
     let bound = O3D_ERRBOUND_A * permanent;
     if det > bound || -det > bound {
         return det;
@@ -551,7 +552,8 @@ mod tests {
                 p()
             } else {
                 // d = a + 3(b − a)/1 ... on the plane when exact; nudge by -1/0/1 along one axis
-                let comb = [a[0] + 2 * (b[0] - a[0]) - (c[0] - a[0]), a[1] + 2 * (b[1] - a[1]) - (c[1] - a[1]), a[2] + 2 * (b[2] - a[2]) - (c[2] - a[2])];
+                let comb =
+                    [a[0] + 2 * (b[0] - a[0]) - (c[0] - a[0]), a[1] + 2 * (b[1] - a[1]) - (c[1] - a[1]), a[2] + 2 * (b[2] - a[2]) - (c[2] - a[2])];
                 let nudge = (i / 2 % 3) as i64 - 1;
                 [comb[0], comb[1], comb[2] + nudge]
             };

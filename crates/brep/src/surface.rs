@@ -500,9 +500,8 @@ mod tests {
     fn nurbs_surface_projection_finds_the_foot_of_a_perpendicular() {
         // A bilinear patch in the plane z = 0.5 x: a planar NURBS surface.
         let pts = vec![Vec3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 4.0, 0.0), Vec3::new(4.0, 0.0, 2.0), Vec3::new(4.0, 4.0, 2.0)];
-        let s = Surface::Nurbs(Box::new(
-            NurbsSurface::new(1, 1, vec![0.0, 0.0, 1.0, 1.0], vec![0.0, 0.0, 1.0, 1.0], 2, 2, pts, vec![1.0; 4]).unwrap(),
-        ));
+        let s =
+            Surface::Nurbs(Box::new(NurbsSurface::new(1, 1, vec![0.0, 0.0, 1.0, 1.0], vec![0.0, 0.0, 1.0, 1.0], 2, 2, pts, vec![1.0; 4]).unwrap()));
         let n = Vec3::new(-0.5, 0.0, 1.0).normalized().unwrap();
         let on = s.point(0.4, 0.6);
         let pr = s.closest_point(on + n * 0.7).unwrap();
