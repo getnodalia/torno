@@ -4,16 +4,19 @@
 #![forbid(unsafe_code)]
 
 pub mod build;
+pub mod cdt;
 pub mod check;
 pub mod curve;
 pub mod error;
 pub mod mass;
 pub mod math;
+pub mod mesh;
 pub mod nurbs;
 pub mod profile;
 pub mod quad;
 pub mod robust;
 pub mod surface;
+pub mod tessellate;
 pub mod tol;
 pub mod topology;
 pub mod uv;
