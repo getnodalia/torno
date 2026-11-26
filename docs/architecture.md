@@ -3,7 +3,7 @@
 <!-- ANCHOR: architecture -->
 | Layer | Crates | Role |
 |---|---|---|
-| L0 | `geom` | vectors, planes, profiles, meshes and their measures |
+| L0 | `geom`, `brep` | vectors, planes, profiles, meshes and their measures; `brep` (`nodalia-brep`) is Nodalia's own experimental B-rep kernel, standalone and unused by Torno until it passes the parity gates in [brep-roadmap.md](brep-roadmap.md) |
 | L1 | `sketch`, `kernel`, `render`, `dynamics` | constraint solver and profiles; the B-rep kernel boundary (the vendored `solidcore`); product rendering (render jobs and their backends) on the shared viewport renderer; multibody dynamics (rigid bodies, joints, forces, time integration) |
 | L2 | `doc` | parameters, expressions, the feature timeline and its incremental evaluation |
 | L3 | `io` | design files, STL/OBJ/STEP/3MF export, STEP and 3MF/STL/OBJ/glTF import features |

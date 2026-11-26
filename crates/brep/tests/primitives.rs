@@ -164,3 +164,14 @@ fn constructors_refuse_bad_dimensions_with_errors() {
     let crossing = Profile2::rectangle(-1.0, 0.0, 1.0, 1.0).unwrap();
     assert!(revolve(&crossing, &Frame::WORLD, &T).is_err());
 }
+
+#[test]
+fn the_readme_example_runs() {
+    use nodalia_brep::tessellate::tessellate;
+    let solid = cylinder(&Frame::WORLD, 10.0, 40.0, &T).unwrap();
+    assert!(solid.validate(&T).is_valid());
+    let props = solid_properties(&solid, solid0(&solid)).unwrap();
+    assert!(rel(props.volume, std::f64::consts::PI * 100.0 * 40.0) < 1e-11);
+    let mesh = tessellate(&solid, 0.01).unwrap();
+    assert!(mesh.check().is_watertight());
+}
