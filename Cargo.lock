@@ -1329,28 +1329,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "craft-plugin"
-version = "0.2.1"
-dependencies = [
- "schemars",
- "serde",
- "serde_json",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "craft-plugin-wasm"
-version = "0.2.1"
-dependencies = [
- "cap-std",
- "craft-plugin",
- "log",
- "serde_json",
- "wasmtime",
- "wat",
-]
-
-[[package]]
 name = "cranelift-assembler-x64"
 version = "0.135.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3787,6 +3765,28 @@ dependencies = [
 [[package]]
 name = "nodalia-brep"
 version = "0.2.1"
+
+[[package]]
+name = "nodalia-plugin"
+version = "0.2.1"
+dependencies = [
+ "schemars",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "nodalia-plugin-wasm"
+version = "0.2.1"
+dependencies = [
+ "cap-std",
+ "log",
+ "nodalia-plugin",
+ "serde_json",
+ "wasmtime",
+ "wat",
+]
 
 [[package]]
 name = "nodalia-theme"
@@ -6472,10 +6472,10 @@ dependencies = [
 name = "torno-engine"
 version = "0.2.1"
 dependencies = [
- "craft-plugin",
- "craft-plugin-wasm",
  "image",
  "log",
+ "nodalia-plugin",
+ "nodalia-plugin-wasm",
  "png",
  "schemars",
  "serde",

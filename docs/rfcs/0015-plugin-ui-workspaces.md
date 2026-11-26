@@ -30,7 +30,7 @@ Plugins should be able to add declarative panels, whole workspaces, and enough v
 
 ## The WIT package
 
-The contract is one WIT package, `craft:plugin@0.1.0`, in [`0015-plugin-ui/craft-plugin.wit`](0015-plugin-ui/craft-plugin.wit). The file parses with `wasm-tools component wit`. Each interface is quoted in the section that explains it. JSON stays in two places only: the manifest `plugin.json`, and command arguments and results, which are data per RFC 0002 so one WIT serves every Craft app.
+The contract is one WIT package, `craft:plugin@0.1.0`, in [`0015-plugin-ui/nodalia-plugin.wit`](0015-plugin-ui/nodalia-plugin.wit). The file parses with `wasm-tools component wit`. Each interface is quoted in the section that explains it. JSON stays in two places only: the manifest `plugin.json`, and command arguments and results, which are data per RFC 0002 so one WIT serves every Craft app.
 
 | Interface | Role |
 |---|---|

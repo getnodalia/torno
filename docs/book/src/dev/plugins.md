@@ -98,7 +98,7 @@ File or Help menu; every entry is in the Plugins menu anyway.
 ## Step 2: the interface
 
 The WIT file is the contract between Torno and the plugin: what the plugin may call, and what
-it must export. Copy it from Torno's source, `crates/craft-plugin/wit/plugin.wit`, into
+it must export. Copy it from Torno's source, `crates/nodalia-plugin/wit/plugin.wit`, into
 `plate-maker-src/wit/plugin.wit`. Its package is `craft:plugin@0.2.0`, and it has two worlds:
 
 - `command-plugin` imports `commands` (run a Torno command), `log`, `control` (progress and

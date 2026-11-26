@@ -1,7 +1,7 @@
 use std::{env, error::Error, fs, path::PathBuf};
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let wit = "../craft-plugin/wit/plugin.wit";
+    let wit = "../nodalia-plugin/wit/plugin.wit";
     println!("cargo:rerun-if-changed={wit}");
     let source = fs::read_to_string(wit)?;
     let package =
@@ -21,7 +21,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let importer = format!(
         "mod importer_bindings {{\n\
              wasmtime::component::bindgen!({{\n\
-                 path: \"../craft-plugin/wit\",\n\
+                 path: \"../nodalia-plugin/wit\",\n\
                  world: \"importer-plugin\",\n\
                  with: {{\n\
                      \"{package_name}/types\": super::bindings::{namespace}::{name}::types,\n\

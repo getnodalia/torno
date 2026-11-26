@@ -1,7 +1,7 @@
 //! An app-independent component sandbox. Only explicitly bound Craft imports exist.
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
-use craft_plugin::{LossReport, Manifest, PluginHost, Result};
+use nodalia_plugin::{LossReport, Manifest, PluginHost, Result};
 use serde_json::Value;
 use std::path::PathBuf;
 
@@ -40,7 +40,7 @@ pub fn run_with_options<H: PluginHost + 'static>(
     #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
     {
         let _ = (manifest, component, entry, params, options);
-        (host, Err(craft_plugin::HostError::Trap { reason: "component execution requires an x86-64 or AArch64 native build".into() }))
+        (host, Err(nodalia_plugin::HostError::Trap { reason: "component execution requires an x86-64 or AArch64 native build".into() }))
     }
 }
 
@@ -57,7 +57,7 @@ pub fn check_component(manifest: &Manifest, component: &[u8]) -> Result<()> {
     #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
     {
         let _ = (manifest, component);
-        Err(craft_plugin::HostError::Trap { reason: "checking a component requires an x86-64 or AArch64 native build".into() })
+        Err(nodalia_plugin::HostError::Trap { reason: "checking a component requires an x86-64 or AArch64 native build".into() })
     }
 }
 
@@ -96,6 +96,6 @@ pub fn run_import<H: PluginHost + 'static>(
     #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
     {
         let _ = (manifest, component, entry, options, request);
-        (host, Err(craft_plugin::HostError::Trap { reason: "component execution requires an x86-64 or AArch64 native build".into() }))
+        (host, Err(nodalia_plugin::HostError::Trap { reason: "component execution requires an x86-64 or AArch64 native build".into() }))
     }
 }

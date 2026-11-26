@@ -2,7 +2,7 @@ use crate::{ImportRequest, Imported, RuntimeOptions};
 #[cfg(unix)]
 use cap_std::fs::OpenOptionsExt;
 use cap_std::fs::{Dir, OpenOptions};
-use craft_plugin::{
+use nodalia_plugin::{
     CommandSchema, Effect, HostError, Limits, LossReport, MAX_IMPORT_CHUNK_BYTES, MAX_IMPORT_DESIGN_BYTES, MAX_IMPORT_INPUT_BYTES, MAX_JSON_BYTES,
     Manifest, PluginHost, Result,
 };
@@ -20,7 +20,7 @@ use wasmtime::component::{Component, Linker};
 use wasmtime::{Config, Engine, Store, StoreLimits, StoreLimitsBuilder, UpdateDeadline};
 
 mod bindings {
-    wasmtime::component::bindgen!({ path: "../craft-plugin/wit", world: "command-plugin" });
+    wasmtime::component::bindgen!({ path: "../nodalia-plugin/wit", world: "command-plugin" });
 }
 include!(concat!(env!("OUT_DIR"), "/aliases.rs"));
 include!(concat!(env!("OUT_DIR"), "/importer.rs"));
@@ -284,7 +284,7 @@ impl<H: PluginHost> files::Host for State<H> {
         // A read entry stays read-only in every way: no file write, whatever folders are granted.
         if self.effect == Effect::Read {
             self.check()?;
-            return Err(self.fail(craft_plugin::read_entry_refusal("write-file")));
+            return Err(self.fail(nodalia_plugin::read_entry_refusal("write-file")));
         }
         self.file_path(&grant, &path, true)?;
         let path: PathBuf = Path::new(&path).components().collect();
@@ -294,7 +294,7 @@ impl<H: PluginHost> files::Host for State<H> {
         let write = (|| -> std::io::Result<PathBuf> {
             let folder = self.folders.get(&grant).ok_or_else(|| std::io::Error::other("grant disappeared"))?;
             let parent = path.parent().filter(|p| !p.as_os_str().is_empty()).unwrap_or_else(|| Path::new("."));
-            let temp = parent.join(format!(".craft-plugin-{}-{}", std::process::id(), NEXT_FILE.fetch_add(1, Ordering::Relaxed)));
+            let temp = parent.join(format!(".nodalia-plugin-{}-{}", std::process::id(), NEXT_FILE.fetch_add(1, Ordering::Relaxed)));
             let mut options = OpenOptions::new();
             options.write(true).create_new(true);
             let mut file = folder.dir.open_with(&temp, &options)?;
@@ -553,7 +553,7 @@ fn execution_error(failure: &wasmtime::Error, remaining: Option<u64>, limits: &L
     );
     // A budget the plugin ran into is said plainly; the engine's details are for its author.
     let exhausted = |limit: &str, allowed: u64| {
-        ::log::debug!(target: "craft_plugin_wasm", "plugin stopped: {reason}");
+        ::log::debug!(target: "nodalia_plugin_wasm", "plugin stopped: {reason}");
         HostError::Exhausted { limit: limit.into(), allowed }
     };
     match failure.downcast_ref::<wasmtime::Trap>() {
@@ -564,7 +564,7 @@ fn execution_error(failure: &wasmtime::Error, remaining: Option<u64>, limits: &L
     }
 }
 
-/// The WIT a component was built against: the current [`craft_plugin::API`] or the frozen 0.1.
+/// The WIT a component was built against: the current [`nodalia_plugin::API`] or the frozen 0.1.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Wit {
     Current,
@@ -573,17 +573,17 @@ enum Wit {
 
 /// Record an interface version before compilation can fail on a validator limit.
 fn note_version(name: &str, found: &mut BTreeSet<String>) -> Result<()> {
-    let package = craft_plugin::API.split_once('@').map(|(package, _)| package).unwrap_or(craft_plugin::API);
+    let package = nodalia_plugin::API.split_once('@').map(|(package, _)| package).unwrap_or(nodalia_plugin::API);
     let version_of = |name: &str| -> Option<String> {
         name.strip_prefix(&format!("{package}/")).and_then(|rest| rest.split_once('@')).map(|(_, version)| version.chars().take(32).collect())
     };
     let Some(version) = version_of(name) else { return Ok(()) };
-    if !craft_plugin::WIT_VERSIONS.contains(&version.as_str()) {
+    if !nodalia_plugin::WIT_VERSIONS.contains(&version.as_str()) {
         return Err(HostError::UnsupportedCapability {
             capability: format!("{package}@{version}"),
             reason: format!(
                 "built against {package}@{version}, and this host runs {package} {}; update the app or the plugin",
-                craft_plugin::WIT_VERSIONS.join(" and ")
+                nodalia_plugin::WIT_VERSIONS.join(" and ")
             ),
         });
     }
@@ -595,7 +595,7 @@ fn note_version(name: &str, found: &mut BTreeSet<String>) -> Result<()> {
 /// the WIT version the component's imports and exports name: one the host runs, and only one.
 fn check_imports(engine: &Engine, component: &Component) -> Result<Wit> {
     use wasmtime::component::types::ComponentItem;
-    let package = craft_plugin::API.split_once('@').map(|(package, _)| package).unwrap_or(craft_plugin::API);
+    let package = nodalia_plugin::API.split_once('@').map(|(package, _)| package).unwrap_or(nodalia_plugin::API);
     let mut found = BTreeSet::new();
     /// One import (`import`) or export and everything in it, at most `remaining` items in all.
     #[allow(clippy::too_many_arguments)]
@@ -724,8 +724,8 @@ pub(super) fn run<H: PluginHost + 'static>(
 #[allow(clippy::too_many_arguments)]
 fn execute<H: PluginHost + 'static>(
     host: H,
-    runtime: &craft_plugin::RuntimeManifest,
-    entry: &craft_plugin::Entry,
+    runtime: &nodalia_plugin::RuntimeManifest,
+    entry: &nodalia_plugin::Entry,
     params: String,
     (engine, component, stack): (Engine, Component, usize),
     (commands, groups): (BTreeMap<String, CommandSchema>, BTreeSet<String>),
@@ -779,7 +779,7 @@ fn execute<H: PluginHost + 'static>(
             .map_err(|e| HostError::InvalidInput { field: "result".into(), reason: format!("entry result is not JSON: {e}") })?;
         if let Ok(remaining) = store.get_fuel() {
             ::log::debug!(
-                target: "craft_plugin_wasm",
+                target: "nodalia_plugin_wasm",
                 "plugin entry completed: entry={}, fuel_consumed={}, fuel_remaining={remaining}, fuel_limit={}",
                 entry.name,
                 limits.fuel.saturating_sub(remaining),
@@ -880,7 +880,7 @@ impl PluginHost for Inert {
     fn rollback_transaction(&mut self) -> Result<()> {
         Ok(())
     }
-    fn granted_folders(&self) -> Vec<craft_plugin::FileGrant> {
+    fn granted_folders(&self) -> Vec<nodalia_plugin::FileGrant> {
         Vec::new()
     }
     fn log(&mut self, _message: &str) {}

@@ -1,11 +1,11 @@
 //! Torno policy and transactions for the shared Craft plugin host.
 
 use crate::{EngineError, Result, Session};
-pub use craft_plugin::{
+pub use nodalia_plugin::{
     API, Effect, Entry, EntryKind, FileGrant, HostError, HostLimits, Limits, LossItem, LossReport, LossSeverity, MAX_COMPONENT_BYTES, MAX_JSON_BYTES,
     MAX_MANIFEST_BYTES, MAX_MEMORY_MIB, Manifest, RuntimeManifest, UiSlot, check_input, valid_id,
 };
-use craft_plugin::{CommandSchema, PluginHost};
+use nodalia_plugin::{CommandSchema, PluginHost};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
@@ -140,7 +140,7 @@ impl AppState {
 }
 
 pub fn parse_manifest(text: &[u8], folder: &str) -> Result<Manifest> {
-    let manifest = craft_plugin::parse_manifest_for(text, folder, "Torno")?;
+    let manifest = nodalia_plugin::parse_manifest_for(text, folder, "Torno")?;
     let refuse = |field: &str, reason: String| -> EngineError { HostError::InvalidManifest { field: field.into(), reason }.into() };
     if let Some(runtime) = &manifest.runtime {
         for entry in &runtime.entries {
@@ -210,7 +210,7 @@ fn input_only_command(id: &str) -> bool {
 
 /// Both the manifest and the user must approve a folder for the intended access.
 /// Writers retain the existing requirement that both read and write are approved.
-fn approved_file_folders(granted: &[FileGrant], requested: &[craft_plugin::FilePermission], write: bool) -> Vec<PathBuf> {
+fn approved_file_folders(granted: &[FileGrant], requested: &[nodalia_plugin::FilePermission], write: bool) -> Vec<PathBuf> {
     granted
         .iter()
         .filter(|g| g.read && (!write || g.write) && requested.iter().any(|r| r.name == g.name && r.read && (!write || r.write)))
@@ -364,7 +364,7 @@ fn run_package(session: &mut Session, package: Package, entry: &str, params: &se
         let file_read_folders = approved_file_folders(&approved, &rt.permissions.files, false);
         let file_folders = approved_file_folders(&approved, &rt.permissions.files, true);
         let (host, result) =
-            craft_plugin_wasm::run(TornoHost { file_folders, file_read_folders, ..host }, &package.manifest, &package.component, entry, params);
+            nodalia_plugin_wasm::run(TornoHost { file_folders, file_read_folders, ..host }, &package.manifest, &package.component, entry, params);
         let value = result?;
         if !std::sync::Arc::ptr_eq(&session.doc, &host.session.doc)
             || session.active_sketch != host.session.active_sketch
@@ -442,7 +442,7 @@ impl TornoHost {
 /// `timeline.roll_to` moves only that private session's marker.
 pub const EVALUATE_COMMANDS: &[&str] = &["document.inspect", "inspect.measure", "model.edges", "model.faces", "timeline.roll_to"];
 impl PluginHost for TornoHost {
-    fn evaluate_open(&mut self, design: &[u8]) -> craft_plugin::Result<()> {
+    fn evaluate_open(&mut self, design: &[u8]) -> nodalia_plugin::Result<()> {
         let doc = torno_io::read_design(design)
             .map_err(|e| HostError::InvalidInput { field: "design".into(), reason: format!("Torno can't read this design: {e}") })?;
         let validation = self.session.validation();
@@ -451,7 +451,7 @@ impl PluginHost for TornoHost {
         self.evaluation = Some(Box::new(opened));
         Ok(())
     }
-    fn evaluate_run(&mut self, command: &str, args: &Value) -> craft_plugin::Result<Value> {
+    fn evaluate_run(&mut self, command: &str, args: &Value) -> nodalia_plugin::Result<Value> {
         if !EVALUATE_COMMANDS.contains(&command) {
             return Err(HostError::PermissionDenied { permission: format!("evaluate: {command} is not one of {}", EVALUATE_COMMANDS.join(", ")) });
         }
@@ -474,7 +474,7 @@ impl PluginHost for TornoHost {
             })
             .collect()
     }
-    fn run_command(&mut self, name: &str, params: &Value) -> craft_plugin::Result<Value> {
+    fn run_command(&mut self, name: &str, params: &Value) -> nodalia_plugin::Result<Value> {
         if catalog_command(name).is_none() {
             return Err(HostError::PermissionDenied { permission: format!("command {name} is not granted") });
         }
@@ -515,14 +515,14 @@ impl PluginHost for TornoHost {
         self.note_view(name, &reply, camera_before, camera_after);
         Ok(reply)
     }
-    fn begin_transaction(&mut self) -> craft_plugin::Result<()> {
+    fn begin_transaction(&mut self) -> nodalia_plugin::Result<()> {
         if self.transaction.is_some() {
             return Err(HostError::InvalidInput { field: "transaction".into(), reason: "already active".into() });
         }
         self.transaction = Some(self.session.scratch());
         Ok(())
     }
-    fn commit_transaction(&mut self) -> craft_plugin::Result<()> {
+    fn commit_transaction(&mut self) -> nodalia_plugin::Result<()> {
         let mut computed =
             self.transaction.take().ok_or_else(|| HostError::InvalidInput { field: "transaction".into(), reason: "not active".into() })?;
         computed.undo.clear();
@@ -540,7 +540,7 @@ impl PluginHost for TornoHost {
         }
         Ok(())
     }
-    fn rollback_transaction(&mut self) -> craft_plugin::Result<()> {
+    fn rollback_transaction(&mut self) -> nodalia_plugin::Result<()> {
         self.transaction = None;
         self.sketch_exits.clear();
         self.view = None;
@@ -559,7 +559,7 @@ impl PluginHost for TornoHost {
             .cloned()
             .collect()
     }
-    fn authorize_file_path(&self, path: &Path, write: bool) -> craft_plugin::Result<()> {
+    fn authorize_file_path(&self, path: &Path, write: bool) -> nodalia_plugin::Result<()> {
         if let Some(scope) = torno_io::vfs::current_scope() {
             return scope.check(&path.to_string_lossy()).map_err(|e| HostError::PermissionDenied { permission: e.to_string() });
         }

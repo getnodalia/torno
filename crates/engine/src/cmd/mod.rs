@@ -235,7 +235,7 @@ pub struct CommandSpec {
     pub run: Run,
     pub undoable: bool,
     /// Command authority, independent of undo history. New commands require edit authority.
-    pub effect: craft_plugin::Effect,
+    pub effect: nodalia_plugin::Effect,
     /// What runs instead of `run` when the command is given `live: true` (a frame of an
     /// interactive gesture, see [`Session::execute`]).
     pub live: Option<LiveRun>,
@@ -266,7 +266,7 @@ impl CommandSpec {
             enabled: always,
             run,
             undoable: true,
-            effect: craft_plugin::Effect::Edit,
+            effect: nodalia_plugin::Effect::Edit,
             live: None,
             reads_model: true,
             planned: None,
@@ -323,7 +323,7 @@ impl CommandSpec {
     }
     /// Explicitly reviewed to leave the design and authoring state unchanged.
     pub const fn read_only(mut self) -> Self {
-        self.effect = craft_plugin::Effect::Read;
+        self.effect = nodalia_plugin::Effect::Read;
         self
     }
     pub const fn noundo(mut self) -> Self {

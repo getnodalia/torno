@@ -3,7 +3,7 @@
 //! id is replaced only when the caller says so.
 
 use super::{Manifest, parse_manifest};
-use craft_plugin::HostError;
+use nodalia_plugin::HostError;
 #[cfg(not(target_arch = "wasm32"))]
 use std::path::{Path, PathBuf};
 use torno_io::safe_zip;
@@ -12,8 +12,11 @@ use torno_io::safe_zip;
 /// to 64 MiB) beside its manifest. A command plugin's component stays within 16 MiB (checked
 /// once the manifest says which it is).
 pub const MAX_ZIP_BYTES: usize = 80 << 20;
-pub const LIMITS: safe_zip::Limits =
-    safe_zip::Limits { max_entries: 256, max_entry_bytes: craft_plugin::MAX_IMPORTER_COMPONENT_BYTES as u64, max_total_bytes: MAX_ZIP_BYTES as u64 };
+pub const LIMITS: safe_zip::Limits = safe_zip::Limits {
+    max_entries: 256,
+    max_entry_bytes: nodalia_plugin::MAX_IMPORTER_COMPONENT_BYTES as u64,
+    max_total_bytes: MAX_ZIP_BYTES as u64,
+};
 
 /// Why a `.zip` was not installed.
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
@@ -119,7 +122,7 @@ pub fn from_files(files: Vec<safe_zip::File>, archive: String) -> Result<Unpacke
     }
     // Every file but the plugin's component stays within a command component's budget.
     let component_path = manifest.runtime.as_ref().map(|r| r.module.as_str());
-    if files.iter().any(|f| Some(f.path.as_str()) != component_path && f.bytes.len() > craft_plugin::MAX_COMPONENT_BYTES) {
+    if files.iter().any(|f| Some(f.path.as_str()) != component_path && f.bytes.len() > nodalia_plugin::MAX_COMPONENT_BYTES) {
         return Err(InstallError::Manifest(HostError::LimitExceeded { limit: "a plugin file other than its component is over 16 MiB".into() }));
     }
     let component = if let Some(runtime) = &manifest.runtime {

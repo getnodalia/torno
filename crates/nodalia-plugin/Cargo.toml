@@ -1,5 +1,5 @@
 [package]
-name = "craft-plugin"
+name = "nodalia-plugin"
 description = "App-independent command plugin contracts, manifests and permissions"
 version.workspace = true
 edition.workspace = true

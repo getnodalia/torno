@@ -12,7 +12,7 @@ use torno_doc::plugin_data::{self, BLOBS, CACHE, DATA, META, Meta};
 
 use crate::schema::plugin_storage::{BlobInfo, DataStatus, StorageData, StoredPlugin};
 use crate::{EngineError, Result, Session};
-use craft_plugin::HostError;
+use nodalia_plugin::HostError;
 
 /// The largest main document a plugin keeps in one design, written out.
 pub const MAX_DOCUMENT_BYTES: usize = 16 << 20;
@@ -52,7 +52,7 @@ pub(crate) fn reader(s: &Session, cmd: &str, named: Option<&str>) -> Result<Stri
     match (&s.plugin_state.storage_caller, named) {
         (Some(caller), Some(id)) if id != caller.id => Err(denied(format!("a plugin reads only its own data, not {id}'s"))),
         (Some(caller), _) => Ok(caller.id.clone()),
-        (None, Some(id)) if craft_plugin::valid_id(id) => Ok(id.to_string()),
+        (None, Some(id)) if nodalia_plugin::valid_id(id) => Ok(id.to_string()),
         (None, Some(_)) => Err(crate::params::bad(cmd, "`plugin` must be a plugin id")),
         (None, None) => Err(crate::params::bad(cmd, "`plugin` is required: the id of the plugin whose data to read")),
     }
@@ -210,13 +210,13 @@ pub fn blob(doc: &Document, id: &str, path: &str) -> Option<Vec<u8>> {
 /// The installed plugin with this id, when there is one: its manifest alone (not its component, so
 /// opening a design reads a few KiB per plugin). Reading it runs no code.
 #[cfg(not(target_arch = "wasm32"))]
-fn installed(s: &Session, id: &str) -> Option<craft_plugin::Manifest> {
+fn installed(s: &Session, id: &str) -> Option<nodalia_plugin::Manifest> {
     let dir = s.plugin_state.packages.get(id).map(std::path::PathBuf::from).or_else(|| s.plugin_state.plugins_dir().map(|dir| dir.join(id)))?;
     let bytes = torno_io::vfs::read(&dir.join("plugin.json").to_string_lossy(), super::MAX_MANIFEST_BYTES).ok()?;
     super::parse_manifest(&bytes, id).ok()
 }
 #[cfg(target_arch = "wasm32")]
-fn installed(_s: &Session, _id: &str) -> Option<craft_plugin::Manifest> {
+fn installed(_s: &Session, _id: &str) -> Option<nodalia_plugin::Manifest> {
     None
 }
 

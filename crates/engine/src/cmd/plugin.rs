@@ -95,14 +95,14 @@ fn install(s: &mut Session, p: &Value) -> Result<Value> {
     let zip = torno_io::vfs::read(&p.path, MAX_ZIP_BYTES).map_err(|e| crate::EngineError::Other(format!("could not read {}: {e}", p.path)))?;
     let plugin = unpack(&zip).map_err(failed)?;
     if p.approval.as_ref().is_some_and(|approval| approval != &plugin.approval) {
-        return Err(craft_plugin::HostError::InvalidInput {
+        return Err(nodalia_plugin::HostError::InvalidInput {
             field: "approval".into(),
             reason: "does not match this manifest and component; review the package again".into(),
         }
         .into());
     }
     if p.archive.as_ref().is_some_and(|archive| archive != &plugin.archive) {
-        return Err(craft_plugin::HostError::InvalidInput {
+        return Err(nodalia_plugin::HostError::InvalidInput {
             field: "archive".into(),
             reason: "the .zip changed since it was reviewed; review the package again".into(),
         }
