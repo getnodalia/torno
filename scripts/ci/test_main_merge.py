@@ -55,6 +55,32 @@ class SamePullRequest(unittest.TestCase):
         self.assertFalse(main_merge.same_pull_request(run, 7, "someone/torno", "fix"))
 
 
+class PassingRun(unittest.TestCase):
+    def run_with_jobs(self, jobs):
+        runs = {"workflow_runs": [{"id": 1, "pull_requests": [{"number": 7}], "html_url": "https://run"}]}
+        original = main_merge.get
+        main_merge.get = lambda url, token: runs if "/workflows/" in url else {"jobs": jobs}
+        try:
+            return main_merge.passing_run("o/r", "sha", "t", 7, "o/r", "b")
+        finally:
+            main_merge.get = original
+
+    def job(self, name, conclusion):
+        return {"name": name, "conclusion": conclusion}
+
+    def test_every_shard_passing_is_a_pass_even_with_the_sample_skipped(self):
+        jobs = [self.job(f"Native Linux tests ({i})", "success") for i in range(1, 7)]
+        jobs.append(self.job("Native Linux tests (sample)", "skipped"))
+        self.assertEqual(self.run_with_jobs(jobs), "https://run")
+
+    def test_a_failed_shard_is_not_a_pass(self):
+        jobs = [self.job("Native Linux tests (1)", "success"), self.job("Native Linux tests (2)", "failure")]
+        self.assertEqual(self.run_with_jobs(jobs), "")
+
+    def test_no_shard_that_ran_is_not_a_pass(self):
+        self.assertEqual(self.run_with_jobs([self.job("Native Linux tests (sample)", "skipped")]), "")
+
+
 class MergeOfMain(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

@@ -94,7 +94,9 @@ def passing_run(repo, sha, token, pr, head_repo, head_ref):
         if not same_pull_request(run, pr, head_repo, head_ref):
             continue
         jobs = get(f"{API}/repos/{repo}/actions/runs/{run['id']}/jobs?per_page=100", token).get("jobs", [])
-        shards = [j for j in jobs if j.get("name", "").startswith(SHARD_PREFIX)]
+        # A shard that did not apply to a pull request (the action matrix sample) is skipped, which
+        # is not a failure; one that ran must have passed, and at least one must have run.
+        shards = [j for j in jobs if j.get("name", "").startswith(SHARD_PREFIX) and j.get("conclusion") != "skipped"]
         if shards and all(j.get("conclusion") == "success" for j in shards):
             return run.get("html_url", "")
     return ""
