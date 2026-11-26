@@ -2,7 +2,7 @@
 
 The desktop executable is `torno`, the CLI is `torno-cli`, and designs are saved as
 `.sc` (`.solidcraft` designs from earlier releases still open, and Save keeps their name). Designs, settings and setups from builds released under the previous product name keep
-working (see the [compatibility notes](https://github.com/tangency-labs/solidcraft/blob/main/docs/compatibility.md)).
+working (see the [compatibility notes](https://github.com/getnodalia/torno/blob/main/docs/compatibility.md)).
 
 ## Desktop
 
@@ -57,7 +57,7 @@ xattr -dr com.apple.quarantine /Applications/Torno.app
 ```
 
 When updating from a build released under the previous product name, follow the
-[macOS upgrade notes](https://github.com/tangency-labs/solidcraft/blob/main/docs/compatibility.md#macos) so you replace it rather than install a second copy.
+[macOS upgrade notes](https://github.com/getnodalia/torno/blob/main/docs/compatibility.md#macos) so you replace it rather than install a second copy.
 
 ### Linux AppImage
 
@@ -73,38 +73,6 @@ If the AppImage doesn't start and prints a FUSE message followed by `execv error
 or directory`, AppImageLauncher 2.x is intercepting it: it can't start AppImages built on the
 static runtime, as Torno's is. Update AppImageLauncher to 3.0 (so far only published as
 betas; 3.0.0-beta-3 or newer works), or remove it.
-
-### Linux Flatpak
-
-Install Flatpak using your distribution's package manager. For an installation that receives
-updates, add Flathub for the required Freedesktop runtime and the Torno application feed
-to the same user installation:
-
-```sh
-flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-flatpak remote-add --user --if-not-exists torno https://getnodalia.github.io/torno/flatpak/torno.flatpakrepo
-flatpak install --user torno dev.danielmiguelt.Torno
-flatpak run dev.danielmiguelt.Torno
-```
-
-A Torno remote added before the project moved to `getnodalia.github.io/torno` (from
-`bherbruck.github.io`) no longer finds updates. Point it at the new address, then update:
-`flatpak remote-modify --user --url=https://getnodalia.github.io/torno/flatpak/repo/ torno` and
-`flatpak update --user`.
-
-Earlier releases used the application ID `ai.storyteller.solidcraft`. If you installed that from the Torno remote,
-`flatpak update --user` reports it as end-of-life and offers to replace it with
-`dev.danielmiguelt.Torno`; accept, and your settings and autosaves move with it. If you
-installed a `.flatpak` bundle, install the new bundle, launch it once (it copies your settings),
-then run `flatpak uninstall --user ai.storyteller.solidcraft` (see the
-[compatibility notes](https://github.com/tangency-labs/solidcraft/blob/main/docs/compatibility.md#linux-app-id)).
-
-Alternatively, download the release's `.flatpak` file for your architecture and run
-`flatpak install --user ./torno-VERSION-linux-ARCH.flatpak`. The bundle supplies the
-Flathub runtime repository address; installation still needs internet access to fetch any
-missing runtime. Launch with `flatpak run dev.danielmiguelt.Torno`, rather than looking for
-a host `torno` binary. Files chosen through Open/Save use the desktop file-chooser portal;
-command-line paths outside Documents may need a specific additional filesystem permission.
 
 ### Linux Snap
 
@@ -215,7 +183,7 @@ docker run -d --name torno -p 8080:8080 --restart unless-stopped ghcr.io/tangenc
 ```
 
 Or with Docker Compose, using
-[`packaging/docker/compose.yaml`](https://github.com/tangency-labs/solidcraft/blob/main/packaging/docker/compose.yaml)
+[`packaging/docker/compose.yaml`](https://github.com/getnodalia/torno/blob/main/packaging/docker/compose.yaml)
 (`TORNO_PORT` picks another port):
 
 ```sh
@@ -438,7 +406,7 @@ Torno was renamed from an earlier working name, and that name is gone: the `torn
 and `torno-cli` programs, `.sc` designs, `TORNO_*` environment variables, settings
 folders and the `torno` MCP server all use the current name. Designs saved by earlier
 builds still open, whatever their file extension. Every compatibility shim is listed in the
-[compatibility notes](https://github.com/tangency-labs/solidcraft/blob/main/docs/compatibility.md).
+[compatibility notes](https://github.com/getnodalia/torno/blob/main/docs/compatibility.md).
 
 Use the Torno documentation and web-app URLs. GitHub redirects links to the renamed
-repository; old-name Pages and Flatpak URLs are not maintained as permanent aliases.
+repository; old-name Pages URLs are not maintained as permanent aliases.

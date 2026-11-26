@@ -1,4 +1,4 @@
-"""Flatpak bundle permissions and failure paths for desktop package probes."""
+"""Failure paths for the desktop package probes."""
 import importlib.util
 import itertools
 import json
@@ -9,7 +9,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[2]
-SPEC = importlib.util.spec_from_file_location("flatpak_smoke", ROOT / "packaging/linux/flatpak-smoke.py")
+SPEC = importlib.util.spec_from_file_location("frame_checks", ROOT / "packaging/linux/frame_checks.py")
 SMOKE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(SMOKE)
 SNAP_SPEC = importlib.util.spec_from_file_location("snap_smoke", ROOT / "packaging/linux/snap-smoke.py")
@@ -71,17 +71,6 @@ class Control:
         if index == 0:
             reply["result"]["viewport"] = next(self.viewports)
         return json.dumps(reply) + "\n"
-
-
-class BundlePermissions(unittest.TestCase):
-    def test_hosted_ai_can_connect_and_store_api_keys(self):
-        manifest = ROOT / "packaging/linux/flatpak/dev.danielmiguelt.Torno.bundle.yml"
-        finish_args = manifest.read_text().split("finish-args:\n", 1)[1].split("\nmodules:", 1)[0]
-        permissions = {line.strip()[2:] for line in finish_args.splitlines()
-                       if line.strip().startswith("- ")}
-        for permission in ("--share=network", "--talk-name=org.freedesktop.secrets"):
-            with self.subTest(permission=permission):
-                self.assertIn(permission, permissions)
 
 
 class SnapStartup(unittest.TestCase):

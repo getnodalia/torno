@@ -5,7 +5,7 @@ Runs the confined app (`snap install --dangerous` first) with its normal plugs, 
 the control channel from the host (snaps share the host's network namespace), checks a
 30x20x10 box measures 6000 mm³ and that the GPU drew a non-blank frame, and copies each frame
 to --out (default: the current directory) as snap-<backend>.png. Needs xvfb-run and weston.
-Reuses the frame checks of flatpak-smoke.py.
+Uses the frame checks of frame_checks.py.
 """
 import argparse
 import importlib.util
@@ -23,9 +23,9 @@ import tempfile
 import time
 
 HERE = Path(__file__).resolve().parent
-_spec = importlib.util.spec_from_file_location("flatpak_smoke", HERE / "flatpak-smoke.py")
-flatpak_smoke = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(flatpak_smoke)
+_spec = importlib.util.spec_from_file_location("frame_checks", HERE / "frame_checks.py")
+frame_checks = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(frame_checks)
 
 PORTS = {"x11": 18839, "wayland": 18840}
 # The control channel's token (docs/control-protocol.md), given to the app so this client knows it.
@@ -90,13 +90,13 @@ def drive(app, port, frame):
             io.write(json.dumps(request) + "\n")
             io.flush()
             replies.append(io.readline())
-    renderer = flatpak_smoke.validate_replies("".join(replies[:3]))
+    renderer = frame_checks.validate_replies("".join(replies[:3]))
     capture = json.loads(replies[3])
     if any(json.loads(reply).get("ok") is not True for reply in replies[4:]):
         raise ValueError(f"app.quit failed: {replies[4:]}")
     if capture.get("ok") is not True or renderer != "gpu":
         raise ValueError(f"GPU frame capture failed: renderer={renderer}, {capture}")
-    return renderer, flatpak_smoke.frame_statistics(frame.read_bytes())
+    return renderer, frame_checks.frame_statistics(frame.read_bytes())
 
 
 def run_backend(backend, out):

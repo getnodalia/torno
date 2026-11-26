@@ -13,11 +13,10 @@ there is no commit-message-based version bump.
 Every release asset, binary, installer product name and package uses the Torno name
 (`torno-<version>-linux-<arch>.AppImage`, `Torno-<version>-windows-x64.exe`,
 `torno-cli` archives, …). The old name survives only in the shims listed in
-[compatibility.md](compatibility.md) (the end-of-life Flatpak refs of the old Linux app ID, the legacy `.zsync` and `.flatpakrepo`
-copies, the deprecated old-name CLI alias); keep them until that document says they can go. Do not
+[compatibility.md](compatibility.md) (the legacy `.zsync` copies, the deprecated old-name CLI alias); keep them until that document says they can go. Do not
 rewrite published assets, checksums, tags or historical release notes of earlier versions.
 
-The main installers (`.msi`, portable `.zip`, `.dmg`, `.AppImage`, `.deb`, `.rpm`, `.flatpak`, `.snap`) are
+The main installers (`.msi`, portable `.zip`, `.dmg`, `.AppImage`, `.deb`, `.rpm`, `.snap`) are
 also attached without the version in their names, for example `torno-windows-x64.msi` and
 `torno-linux-x86_64.AppImage`, and listed in `SHA256SUMS.txt`. The README's Download section
 links to `https://github.com/getnodalia/torno/releases/latest/download/<name>`, which follows
@@ -25,9 +24,9 @@ the release marked latest; nightlies never are. Keep these names stable: renamin
 README links and the in-app update check, which picks them by name (`crates/ui-egui/src/update.rs`;
 [updates and privacy](book/src/guide/updates.md)).
 
-Project Pages publishes the documentation, browser app and published-release Flatpak
-repository under `/torno/`. Do not add a separate owner-site publisher or permanent
-old-name Pages/Flatpak aliases. GitHub repository redirects are separate from Pages hosting;
+Project Pages publishes the documentation and browser app
+under `/torno/`. Do not add a separate owner-site publisher or permanent
+old-name Pages aliases. GitHub repository redirects are separate from Pages hosting;
 verify the new project URLs after deployment.
 
 The browser app keeps itself for offline use (`apps/torno-web/sw.js`). Browsers keep that
@@ -39,7 +38,7 @@ The site serves the web app three ways (`packaging/web-channels.sh`, run by `pag
 `/app/` is the web zip attached to the latest release that is not a pre-release, `/app-rc/` the
 zip of the newest published `v*-rc.N` pre-release (a page saying there is none, when it is not
 newer than the release), and `/app-edge/` the build of `main`. Publishing a release or
-pre-release deploys the site again through `flatpak-pages.yml`. The directories are separate
+pre-release deploys the site again through `pages.yml` (started by `release-auto.yml`). The directories are separate
 because a service worker controls everything beneath its own, and each pre-release channel keeps
 its browser storage under its own names (`apps/torno-web/src/channel.rs`), so a design saved
 in one can't reach another. Nightly tags (`vX.Y.Z-nightly...`) are not release candidates.
@@ -61,8 +60,7 @@ use Eastern time; package versions are overridden without changing Cargo.toml or
 so the binaries' embedded Cargo version remains the workspace version. Nightlies never
 replace the latest stable release.
 
-Nightly publication uses `GITHUB_TOKEN`, so it does not trigger the downstream Flatpak Pages
-deployment. The stable Flatpak repository is not automatically updated with nightly builds.
+Nightly publication uses `GITHUB_TOKEN`, so it does not trigger the Pages deployment.
 
 ## Choose and prepare the version
 
@@ -98,7 +96,7 @@ deployment. The stable Flatpak repository is not automatically updated with nigh
 ## Merge, and what follows
 
 Merging the pull request starts **Release from main** on the merge commit. `release.yml` builds
-Linux (both architectures, including Flatpak and Snap), macOS, Windows, FreeBSD and web packages,
+Linux (both architectures, including Snap), macOS, Windows, FreeBSD and web packages,
 checks them, and attaches them with `SHA256SUMS.txt` to the draft `release-tag` created. When it
 passes, `release-publish` publishes the release; a pre-release version (`-rc.N`) is published as
 a pre-release and never becomes latest.
@@ -155,24 +153,16 @@ could not exercise yourself.
 `release-assets` Actions artifact without touching any release. `-f tag=vX.Y.Z` instead rebuilds
 that version's files into its draft (never a published release).
 
-## Flatpak repository coordination
+## Publication workflows
 
-The Flatpak repository proposed in PR #39 consumes **published** releases, not these drafts.
-Keep that deployment separate from building the application. A publication made with an
-Actions `GITHUB_TOKEN` does not trigger downstream `release: published` workflows, so
-`release-auto.yml` dispatches the Flatpak, Snap Store and WinGet workflows itself once a stable
-release is published. Do not assume the repository updated: check
-the deployment run. The Flatpak workflow requests the shared Pages workflow with that tag;
-Pages assembles the documentation, browser app, and Flatpak repository together. Ordinary
-docs updates include the latest stable Flatpak release too. Verify the resulting Pages run,
-not only the dispatch job, so a release cannot erase the docs or app and docs updates cannot
-erase the package repository.
+A publication made with an Actions `GITHUB_TOKEN` does not trigger downstream `release: published`
+workflows, so `release-auto.yml` dispatches the Pages, Snap Store and WinGet workflows itself once a
+stable release is published. Do not assume they ran: check the runs.
 
 ## Snap package and Snap Store
 
 Every release and nightly attaches `torno-<version>-linux-<arch>.snap` for x86_64 and
-aarch64 (`packaging/linux/snap-pack.sh`, manifest `packaging/linux/snap/snapcraft.yaml`). Like the
-Flatpak, it repackages the Linux job's tarball. The `snap` job installs it with `--dangerous`,
+aarch64 (`packaging/linux/snap-pack.sh`, manifest `packaging/linux/snap/snapcraft.yaml`). It repackages the Linux job's tarball. The `snap` job installs it with `--dangerous`,
 starts the confined app on headless X11 and Wayland (`packaging/linux/snap-smoke.py`), models a
 box over the control channel and keeps the captured frames as the `snap-smoke-<arch>` artifact.
 
@@ -183,7 +173,7 @@ without it they are skipped and the `.snap` files are still attached to the rele
 - releases are uploaded to `latest/candidate`, after every package built and the draft was
   staged;
 - publishing a non-prerelease GitHub release runs `snap-store.yml`, which promotes
-  `latest/candidate` to `latest/stable`. As with the Flatpak repository, a publication made with
+  `latest/candidate` to `latest/stable`. A publication made with
   `GITHUB_TOKEN` doesn't trigger it: then run `gh workflow run snap-store.yml`.
 
 To enable the Snap Store once (owner):

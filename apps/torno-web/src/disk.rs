@@ -676,7 +676,7 @@ mod tests {
     fn only_design_opens_use_the_disk_dialog() {
         assert!(opens_design(&[]));
         assert!(opens_design(&["sc"]));
-        assert!(opens_design(&["solidcraft"])); // rebrand: keep
+        assert!(opens_design(&["solidcraft"]));
         assert!(!opens_design(&["step", "stp"]));
         assert!(!opens_design(&["json"]));
     }
@@ -688,7 +688,7 @@ mod tests {
         assert_eq!(open_route(true, &["dxf"]), OpenRoute::Upload);
         assert_eq!(open_route(false, &["png", "jpg", "jpeg"]), OpenRoute::Upload);
         assert_eq!(open_route(true, &[]), OpenRoute::Disk);
-        assert_eq!(open_route(false, &["solidcraft"]), OpenRoute::Panel); // rebrand: keep
+        assert_eq!(open_route(false, &["solidcraft"]), OpenRoute::Panel);
         assert_eq!(accept_list(&["dxf"]), ".dxf");
         assert_eq!(accept_list(&["png", ".JPG", "", "jpeg"]), ".png,.jpg,.jpeg");
         assert_eq!(accept_list(&[]), "");
@@ -711,7 +711,7 @@ mod tests {
         assert!(!apple_touch(mac, 0), "a Mac has no touch screen");
         assert!(!apple_touch(chrome, 10), "a touch screen elsewhere filters as before");
         assert!(!apple_touch("", 0), "hostile input is just not an iPhone");
-        let designs = ["solidcraft", "json", "step"]; // rebrand: keep
+        let designs = ["solidcraft", "json", "step"];
         assert_eq!(input_accept(&designs, true), "");
         assert_eq!(input_accept(&designs, false), ".solidcraft,.json,.step");
     }

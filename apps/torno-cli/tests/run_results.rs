@@ -7,7 +7,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use serde_json::{Value, json};
 
 /// The extension designs had before `.sc`, which the corpus files still carry.
-const LEGACY_EXT: &str = "solidcraft"; // rebrand: keep
+const LEGACY_EXT: &str = "solidcraft";
 
 static NEXT: AtomicUsize = AtomicUsize::new(0);
 

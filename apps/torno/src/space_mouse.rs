@@ -181,7 +181,7 @@ fn load_driver_mapping() -> Option<DriverMapping> {
     let cfg = std::path::PathBuf::from(std::env::var_os("APPDATA")?).join("3Dconnexion").join("3DxWare").join("Cfg");
     // The driver names the profile after the executable; one made for the pre-rename executable
     // still applies until the driver writes a new one (compatibility shim).
-    let profile = ["torno-KMJ.xml", "solidcraft-KMJ.xml", "solvecraft-KMJ.xml"].into_iter().map(|n| cfg.join(n)).find(|p| p.is_file())?; // rebrand: keep
+    let profile = ["torno-KMJ.xml", "solidcraft-KMJ.xml", "solvecraft-KMJ.xml"].into_iter().map(|n| cfg.join(n)).find(|p| p.is_file())?;
     if std::fs::metadata(&profile).ok()?.len() > MAX_PROFILE_BYTES {
         log::warn!("3D mouse: ignoring oversized 3DxWare profile {}", profile.display());
         return None;
