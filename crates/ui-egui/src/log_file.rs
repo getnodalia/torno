@@ -34,7 +34,7 @@ struct FileLog {
 }
 
 fn ours(target: &str) -> bool {
-    target.starts_with("torno") || target.starts_with("craft_plugin_wasm")
+    target.starts_with("torno") || target.starts_with("nodalia_plugin_wasm")
 }
 
 impl Log for FileLog {

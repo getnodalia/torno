@@ -45,7 +45,7 @@ file pickers or permission dialogs. The commands expose input and output schemas
 `plugin.install` reads one bounded zip through `torno_io::safe_zip` and publishes it through
 the existing hidden-folder-and-rename pipeline. `dry_run: true` checks and describes the package,
 including supplied approvals, without changing files or grants. `entry_points` contains the declared
-`craft_plugin::Entry` objects with names, effects, input schemas and slots; `entries` contains
+`nodalia_plugin::Entry` objects with names, effects, input schemas and slots; `entries` contains
 namespaced command ids. Replacing an installed plugin requires `replace: true`.
 
 Approval grants may only narrow manifest requests. An unrequested group, folder name or access mode

@@ -97,7 +97,7 @@ pub enum EngineError {
     #[error("{0}")]
     Other(String),
     #[error("plugin: {0}")]
-    Plugin(#[from] craft_plugin::HostError),
+    Plugin(#[from] nodalia_plugin::HostError),
     /// A plugin failed while it ran or was refused before it ran: named, with its file.
     #[error("{}", .0.text())]
     PluginFailed(Box<plugin::PluginFailure>),
@@ -140,7 +140,7 @@ impl From<torno_kernel::KernelError> for EngineError {
 
 impl EngineError {
     /// The plugin host's error underneath, for a program to tell refusals apart.
-    pub fn host_error(&self) -> Option<&craft_plugin::HostError> {
+    pub fn host_error(&self) -> Option<&nodalia_plugin::HostError> {
         match self {
             EngineError::Plugin(error) => Some(error),
             EngineError::PluginFailed(failure) => Some(&failure.error),

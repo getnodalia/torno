@@ -141,8 +141,8 @@ and triangle indices, up to 8192 vertices and 16384 triangles, subject also to a
 box sample does not request that grant.
 
 The API identifier is the package declaration in the
-[shared WIT](../crates/craft-plugin/wit/plugin.wit). `craft-plugin` defines the app-independent
-manifest and `PluginHost` trait; `craft-plugin-wasm` supplies the native runtime. The Torno
+[shared WIT](../crates/nodalia-plugin/wit/plugin.wit). `nodalia-plugin` defines the app-independent
+manifest and `PluginHost` trait; `nodalia-plugin-wasm` supplies the native runtime. The Torno
 engine supplies its command schemas and transaction implementation. Defaults are 10 million fuel,
 64 MiB guest memory and a 5000 ms execution deadline. Component compilation and native
 CAD work are outside the guest execution budget. Browser execution, automatic
@@ -223,7 +223,7 @@ cargo build --locked --profile ci -p torno -p torno-cli
 
 Plugin examples and converters, including the `example-box` guest and its distribution
 scripts, live outside this repository, per [the plugin RFC](rfcs/0002-plugins.md).
-This checkout supplies the [host WIT](../crates/craft-plugin/wit/plugin.wit) and synthetic
+This checkout supplies the [host WIT](../crates/nodalia-plugin/wit/plugin.wit) and synthetic
 host-test fixtures; it does not supply the guest source or build instructions. Obtain an
 independently distributed package and follow its own instructions. Use `plugin.inspect`
 to obtain that package's actual hash before explicitly running it. Native binary output

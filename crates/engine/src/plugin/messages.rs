@@ -2,7 +2,7 @@
 //! for a limit the numbers and what to change. The text comes from the message catalog
 //! (`plugin_error.*`) in the window's language; without catalogs (the CLI, MCP) it is the English
 //! here, which a test keeps equal to the catalog's.
-use craft_plugin::HostError;
+use nodalia_plugin::HostError;
 
 /// The `plugin_error.*` messages and their English text.
 pub const MESSAGES: &[(&str, &str)] = &[

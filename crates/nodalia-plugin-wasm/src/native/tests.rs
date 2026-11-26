@@ -1,6 +1,6 @@
 use super::*;
 
-use craft_plugin::{API, FileGrant, FilePermission};
+use nodalia_plugin::{API, FileGrant, FilePermission};
 use serde_json::json;
 use std::collections::BTreeSet;
 
@@ -67,7 +67,7 @@ impl PluginHost for App {
     }
 }
 fn manifest() -> Manifest {
-    craft_plugin::parse_manifest(
+    nodalia_plugin::parse_manifest(
         json!({"id":"sample","name":"Sample","version":"1","capabilities":["commands@0.1"],"runtime":{
             "module":"plugin.wasm","entries":[{"name":"make","effect":"edit","input_schema":{"type":"object"}}],
             "commands":["app.write"],"limits":{"fuel":100000,"memory_mib":1,"deadline_ms":5000}
@@ -299,7 +299,7 @@ fn files_are_denied_without_an_explicit_folder_grant() {
 #[test]
 fn files_inside_grant_work_and_escape_is_refused() {
     use files::Host;
-    let root = std::env::temp_dir().join(format!("craft-plugin-test-{}-{}", std::process::id(), NEXT_FILE.fetch_add(1, Ordering::Relaxed)));
+    let root = std::env::temp_dir().join(format!("nodalia-plugin-test-{}-{}", std::process::id(), NEXT_FILE.fetch_add(1, Ordering::Relaxed)));
     std::fs::create_dir_all(&root).unwrap();
     let mut state = state(App::default());
     state.folders.insert(
@@ -320,7 +320,7 @@ fn files_inside_grant_work_and_escape_is_refused() {
 #[test]
 fn staged_writes_publish_in_guest_order_across_grant_aliases_and_normalize_separators() {
     use files::Host;
-    let root = std::env::temp_dir().join(format!("craft-plugin-write-order-{}-{}", std::process::id(), NEXT_FILE.fetch_add(1, Ordering::Relaxed)));
+    let root = std::env::temp_dir().join(format!("nodalia-plugin-write-order-{}-{}", std::process::id(), NEXT_FILE.fetch_add(1, Ordering::Relaxed)));
     std::fs::create_dir_all(root.join("nested")).unwrap();
     let mut state = state(App::default());
     for name in ["a", "z"] {
@@ -459,7 +459,7 @@ fn file_import_denial_rolls_back_even_when_guest_swallows_it_and_grants_enable_r
         assert_eq!((app.begins, app.commits, app.rollbacks), (1, 0, 1));
     }
     let mut app = App::default();
-    let root = std::env::temp_dir().join(format!("craft-plugin-grant-{}-{}", std::process::id(), NEXT_FILE.fetch_add(1, Ordering::Relaxed)));
+    let root = std::env::temp_dir().join(format!("nodalia-plugin-grant-{}-{}", std::process::id(), NEXT_FILE.fetch_add(1, Ordering::Relaxed)));
     std::fs::create_dir_all(&root).unwrap();
     std::fs::write(root.join("secret.txt"), b"{}").unwrap();
     let mut manifest = manifest();
@@ -493,7 +493,7 @@ fn component_file_writes_are_denied_without_a_host_grant() {
 
 #[test]
 fn a_read_entry_is_refused_write_file_even_with_a_write_grant() {
-    let root = std::env::temp_dir().join(format!("craft-plugin-read-entry-{}-{}", std::process::id(), NEXT_FILE.fetch_add(1, Ordering::Relaxed)));
+    let root = std::env::temp_dir().join(format!("nodalia-plugin-read-entry-{}-{}", std::process::id(), NEXT_FILE.fetch_add(1, Ordering::Relaxed)));
     std::fs::create_dir_all(&root).unwrap();
     let target = root.join("secret.txt");
     std::fs::write(&target, b"original").unwrap();
@@ -504,7 +504,7 @@ fn a_read_entry_is_refused_write_file_even_with_a_write_grant() {
     let mut app = App { grants: vec![FileGrant { name: "project".into(), folder: root.clone(), read: true, write: true }], ..Default::default() };
     // The guest ignores the refusal and returns normally: the call still fails, naming the import.
     let failure = run(&mut app, &manifest, &files_component(true, true), "make", &json!({})).unwrap_err();
-    assert_eq!(failure, craft_plugin::read_entry_refusal("write-file"));
+    assert_eq!(failure, nodalia_plugin::read_entry_refusal("write-file"));
     assert!(failure.to_string().contains("write-file"), "{failure}");
     assert_eq!(std::fs::read(&target).unwrap(), b"original");
     assert_eq!((app.commits, app.rollbacks), (0, 1));
@@ -514,7 +514,7 @@ fn a_read_entry_is_refused_write_file_even_with_a_write_grant() {
 
 #[test]
 fn staged_file_writes_publish_after_commit_and_disappear_after_traps_or_commit_failure() {
-    let root = std::env::temp_dir().join(format!("craft-plugin-staged-{}-{}", std::process::id(), NEXT_FILE.fetch_add(1, Ordering::Relaxed)));
+    let root = std::env::temp_dir().join(format!("nodalia-plugin-staged-{}-{}", std::process::id(), NEXT_FILE.fetch_add(1, Ordering::Relaxed)));
     std::fs::create_dir_all(&root).unwrap();
     let target = root.join("secret.txt");
     let mut manifest = manifest();
@@ -541,7 +541,7 @@ fn staged_file_writes_publish_after_commit_and_disappear_after_traps_or_commit_f
 fn reading_a_missing_file_is_an_answer_and_the_entry_can_then_write_it() {
     // #17899: the first run of a plugin that keeps a file of its own has no file yet.
     use files::Host;
-    let root = std::env::temp_dir().join(format!("craft-plugin-missing-{}-{}", std::process::id(), NEXT_FILE.fetch_add(1, Ordering::Relaxed)));
+    let root = std::env::temp_dir().join(format!("nodalia-plugin-missing-{}-{}", std::process::id(), NEXT_FILE.fetch_add(1, Ordering::Relaxed)));
     std::fs::create_dir_all(root.join("folder")).unwrap();
     let mut state = state(App::default());
     state.folders.insert(
@@ -589,7 +589,7 @@ fn reading_a_missing_file_is_an_answer_and_the_entry_can_then_write_it() {
 #[test]
 fn every_file_operation_refuses_hidden_names_inside_a_granted_folder() {
     use files::Host;
-    let root = std::env::temp_dir().join(format!("craft-plugin-hidden-{}-{}", std::process::id(), NEXT_FILE.fetch_add(1, Ordering::Relaxed)));
+    let root = std::env::temp_dir().join(format!("nodalia-plugin-hidden-{}-{}", std::process::id(), NEXT_FILE.fetch_add(1, Ordering::Relaxed)));
     std::fs::create_dir_all(root.join(".private")).unwrap();
     std::fs::write(root.join(".env"), b"secret").unwrap();
     std::fs::write(root.join(".private/config"), b"secret").unwrap();
@@ -616,7 +616,7 @@ fn every_file_operation_refuses_hidden_names_inside_a_granted_folder() {
 #[cfg(unix)]
 fn a_visible_link_to_a_hidden_folder_is_refused_for_reads_and_writes() {
     use files::Host;
-    let root = std::env::temp_dir().join(format!("craft-plugin-link-{}-{}", std::process::id(), NEXT_FILE.fetch_add(1, Ordering::Relaxed)));
+    let root = std::env::temp_dir().join(format!("nodalia-plugin-link-{}-{}", std::process::id(), NEXT_FILE.fetch_add(1, Ordering::Relaxed)));
     std::fs::create_dir_all(root.join(".hidden")).unwrap();
     std::fs::write(root.join(".hidden/secret.txt"), b"secret").unwrap();
     std::fs::write(root.join("plain.txt"), b"plain").unwrap();
@@ -646,7 +646,7 @@ fn a_visible_link_to_a_hidden_folder_is_refused_for_reads_and_writes() {
 
 #[test]
 fn file_publication_failure_reports_possible_changes_and_cleans_staged_files() {
-    let root = std::env::temp_dir().join(format!("craft-plugin-publication-{}-{}", std::process::id(), NEXT_FILE.fetch_add(1, Ordering::Relaxed)));
+    let root = std::env::temp_dir().join(format!("nodalia-plugin-publication-{}-{}", std::process::id(), NEXT_FILE.fetch_add(1, Ordering::Relaxed)));
     // The guest's target is a directory, so staging succeeds but publication fails.
     std::fs::create_dir_all(root.join("secret.txt")).unwrap();
     let mut app = App { grants: vec![FileGrant { name: "project".into(), folder: root.clone(), read: false, write: true }], ..Default::default() };
@@ -693,7 +693,7 @@ fn file_access_authorizes_the_complete_path_for_reads_and_writes() {
             if path == self.allowed { Ok(()) } else { Err(HostError::PermissionDenied { permission: "caller file scope".into() }) }
         }
     }
-    let root = std::env::temp_dir().join(format!("craft-plugin-scope-{}-{}", std::process::id(), NEXT_FILE.fetch_add(1, Ordering::Relaxed)));
+    let root = std::env::temp_dir().join(format!("nodalia-plugin-scope-{}-{}", std::process::id(), NEXT_FILE.fetch_add(1, Ordering::Relaxed)));
     std::fs::create_dir_all(&root).unwrap();
     std::fs::write(root.join("allowed.txt"), b"original").unwrap();
     std::fs::write(root.join("denied.txt"), b"original").unwrap();
@@ -719,7 +719,7 @@ fn file_access_authorizes_the_complete_path_for_reads_and_writes() {
 }
 
 fn importer_manifest(input_folder: bool) -> Manifest {
-    craft_plugin::parse_manifest(
+    nodalia_plugin::parse_manifest(
         json!({"id":"sample","name":"Sample","version":"1","capabilities":["formats@0.1"],"runtime":{
             "module":"sample.wasm","commands":[],"entries":[{"name":"convert","kind":"importer","extensions":["smp"]}],
             "limits":{"fuel":10000000,"memory_mib":2,"deadline_ms":2000},"permissions":{"input_folder":input_folder}
@@ -748,7 +748,7 @@ fn import_with(component: &[u8], manifest: &Manifest, path: PathBuf, input_folde
     crate::run_import(App::default(), manifest, component, "convert", &json!({}), &request).1
 }
 fn import_folder(files: &[(&str, &[u8])]) -> PathBuf {
-    let root = std::env::temp_dir().join(format!("craft-plugin-import-{}-{}", std::process::id(), NEXT_FILE.fetch_add(1, Ordering::Relaxed)));
+    let root = std::env::temp_dir().join(format!("nodalia-plugin-import-{}-{}", std::process::id(), NEXT_FILE.fetch_add(1, Ordering::Relaxed)));
     std::fs::create_dir_all(&root).unwrap();
     for (name, bytes) in files {
         std::fs::write(root.join(name), bytes).unwrap();
@@ -762,7 +762,7 @@ fn an_importer_streams_its_file_into_a_design_and_returns_its_loss_report() {
     assert_eq!(imported.design, b"design bytes");
     assert_eq!(imported.report.summary, "Copied the file");
     assert_eq!(imported.report.items.len(), 1);
-    assert_eq!(imported.report.items[0].severity, craft_plugin::LossSeverity::Dropped);
+    assert_eq!(imported.report.items[0].severity, nodalia_plugin::LossSeverity::Dropped);
     // A command runtime cannot be run as an importer, nor an importer as a command.
     assert!(matches!(import(&manifest(), root.join("bracket.smp"), false), Err(HostError::InvalidInput { .. })));
     let mut app = App::default();

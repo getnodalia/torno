@@ -988,7 +988,7 @@ fn explicit_plugin_host_settings_allow_reviewed_larger_requests_and_reject_bad_p
     let debug = cli().env_remove("RUST_LOG").arg("--debug").arg("--plugin-limits").arg(&policy).args(["exec", "plugin.run", &run]).output().unwrap();
     assert!(debug.status.success(), "{}", String::from_utf8_lossy(&debug.stderr));
     let stderr = String::from_utf8_lossy(&debug.stderr);
-    let fuel = stderr.lines().find(|line| line.contains("craft_plugin_wasm") && line.contains("fuel_consumed="));
+    let fuel = stderr.lines().find(|line| line.contains("nodalia_plugin_wasm") && line.contains("fuel_consumed="));
     assert!(fuel.is_some(), "--debug must include shared plugin runtime diagnostics: {stderr}");
     let fuel = fuel.unwrap();
     let counter = |name: &str| fuel.split_once(&format!("{name}=")).unwrap().1.split([',', ' ']).next().unwrap().parse::<u64>().unwrap();
