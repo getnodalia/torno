@@ -9,9 +9,9 @@ use std::ffi::OsString;
 /// The current prefix.
 pub const PREFIX: &str = "TORNO_";
 /// The former prefix, read only as a fallback.
-pub const LEGACY_PREFIX: &str = "SOLIDCRAFT_"; // rebrand: keep
+pub const LEGACY_PREFIX: &str = "SOLIDCRAFT_";
 
-/// `TORNO_<name>`, else the legacy `SOLIDCRAFT_<name>`. `name` is the part after the // rebrand: keep
+/// `TORNO_<name>`, else the legacy `SOLIDCRAFT_<name>`. `name` is the part after the
 /// prefix, e.g. `"RECOVERY_DIR"`.
 pub fn var_os(name: &str) -> Option<OsString> {
     lookup(name, |k| std::env::var_os(k))
@@ -38,13 +38,13 @@ mod tests {
 
     #[test]
     fn new_prefix_wins_over_legacy() {
-        let get = env(&[("TORNO_RECOVERY_DIR", "/new"), ("SOLIDCRAFT_RECOVERY_DIR", "/old")]); // rebrand: keep
+        let get = env(&[("TORNO_RECOVERY_DIR", "/new"), ("SOLIDCRAFT_RECOVERY_DIR", "/old")]);
         assert_eq!(lookup("RECOVERY_DIR", get), Some(OsString::from("/new")));
     }
 
     #[test]
     fn legacy_prefix_is_the_fallback() {
-        let get = env(&[("SOLIDCRAFT_CONTROL_PORT", "4000")]); // rebrand: keep
+        let get = env(&[("SOLIDCRAFT_CONTROL_PORT", "4000")]);
         assert_eq!(lookup("CONTROL_PORT", get), Some(OsString::from("4000")));
     }
 

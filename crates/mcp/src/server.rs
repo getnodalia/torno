@@ -192,8 +192,8 @@ impl Tools for Agent {
         let read = match uri {
             // The solvecraft:// URIs are what earlier releases listed (compatibility shim,
             // docs/compatibility.md); clients that saved them still read the resource.
-            "torno://design" | "solidcraft://design" | "solvecraft://design" => self.backend.call("document.inspect", json!({"measure": true})), // rebrand: keep
-            "torno://commands" | "solidcraft://commands" | "solvecraft://commands" => self.backend.call("engine.commands", json!({})), // rebrand: keep
+            "torno://design" | "solidcraft://design" | "solvecraft://design" => self.backend.call("document.inspect", json!({"measure": true})),
+            "torno://commands" | "solidcraft://commands" | "solvecraft://commands" => self.backend.call("engine.commands", json!({})),
             _ => return None,
         };
         Some(read.map(|v| Contents::json(&v)))

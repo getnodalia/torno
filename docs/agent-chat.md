@@ -257,59 +257,6 @@ why and gives its install command; reinstall it until `--version` works in a ter
 press **Refresh**. A check that runs out of time is not counted as a failure. **Test** starts an agent briefly, asks it for a
 session and ends it again.
 
-### Flatpak
-
-The Flatpak sandbox has no home-folder or network access by default. Agents installed
-through nvm or `~/.local/bin` can therefore work in a terminal while Torno reports
-that no agent was found. For Claude Code and its ACP adapter, run:
-
-```sh
-flatpak override --user dev.danielmiguelt.Torno --filesystem=~/.nvm:ro --filesystem=~/.local/bin:ro --filesystem=~/.local/share/claude:ro --filesystem=~/.claude --filesystem=~/.claude.json --share=network
-```
-
-These permissions apply to Torno for your user account:
-
-- `~/.nvm:ro` exposes Node and globally installed npm adapters read-only.
-- `~/.local/bin:ro` exposes locally installed executables read-only.
-- `~/.local/share/claude:ro` exposes Claude Code's native installation read-only,
-  including the targets of links in `~/.local/bin`.
-- `~/.claude` and `~/.claude.json` allow Claude Code to read and update its sign-in
-  and configuration files.
-- `--share=network` lets the adapter reach its service. It also gives Torno
-  network access, including making an enabled control server reachable from the host.
-
-Restart Torno after applying the override. Other agents or installation folders
-may need different filesystem permissions.
-
-Starting from a computer with no Node, these steps set up Claude Code for the Flatpak. They were
-tested on Linux Mint:
-
-1. Install Node through nvm, not the distribution's package. A package such as `nodejs` from
-   `apt` can be too old, and it installs to `/usr/bin`, which the sandbox can't see. Install
-   nvm with the command from the [nvm README](https://github.com/nvm-sh/nvm#installing-and-updating),
-   open a new terminal, then run `nvm install --lts` and check it with `node -v`.
-2. Install Claude Code and its adapter:
-
-   ```sh
-   npm install -g --allow-scripts=@anthropic-ai/claude-code @anthropic-ai/claude-code
-   npm install -g @agentclientprotocol/claude-agent-acp
-   ```
-
-   Newer npm versions skip a package's setup script unless it's allowed. Without
-   `--allow-scripts`, Claude Code installs but its setup doesn't run. Check it with
-   `claude --version`.
-3. Run `claude` once and sign in. Claude Code needs a Pro, Max, Team or Enterprise plan, or an
-   Anthropic Console account; the free Claude plan doesn't include it. Then quit it; it doesn't
-   need to trust your home folder for Torno to use it.
-4. Run the `flatpak override` command above. **Preferences → Assistant** shows the same command
-   with a **Copy** button.
-5. Quit Torno completely and start it again. **Preferences → Assistant → Agents** then lists
-   Claude Code with **login found**.
-
-The adapter includes the Claude Code engine itself, so steps 2 and 3 can likely be shortened to
-installing only `@agentclientprotocol/claude-agent-acp` and signing in from the panel (see
-[Signing in](#signing-in)). That shorter path hasn't been tested with the Flatpak yet.
-
 ### XAI Grok
 
 Install **Grok Build** and run `grok login` in a terminal to sign in with your Grok account.

@@ -1,5 +1,5 @@
 # Quick static checks for the release pipeline (seconds, no Rust build): workflow syntax, the
-# packaging shell and PowerShell scripts, and the Linux desktop/AppStream/Flatpak metadata.
+# packaging shell and PowerShell scripts, and the Linux desktop/AppStream metadata.
 # Adapted from PhotoCraft's (storytold/photocraft, Apache-2.0; see ATTRIBUTION.md).
 name: Packaging lint
 
@@ -41,8 +41,8 @@ jobs:
         run: python3 packaging/tests/windows_icon_test.py
       - name: AppImage CLI wrapper regression
         run: python3 packaging/tests/apprun_test.py
-      - name: Flatpak desktop smoke validation regression
-        run: python3 packaging/tests/flatpak_test.py
+      - name: Desktop package probe regression
+        run: python3 packaging/tests/desktop_probe_test.py
       - name: PowerShell
         shell: pwsh
         run: |
@@ -52,7 +52,7 @@ jobs:
             if ($errors) { $errors | ForEach-Object { Write-Output "::error file=$($f.Name)::$_" }; exit 1 }
             Write-Output "ok $($f.Name)"
           }
-      - name: XML, desktop entry, AppStream, Flatpak manifest
+      - name: XML, desktop entry, AppStream, Snap manifest
         run: |
           xmllint --noout assets/platforms/windows/torno.wxs assets/platforms/windows/torno.en-us.wxl assets/platforms/macos/*.plist* assets/platforms/linux/*.xml*
           desktop-file-validate assets/platforms/linux/dev.danielmiguelt.Torno.desktop
@@ -60,10 +60,7 @@ jobs:
           grep -qx 'StartupWMClass=dev.danielmiguelt.Torno' assets/platforms/linux/dev.danielmiguelt.Torno.desktop
           grep -q '<id>ai.storyteller.solidcraft</id>' assets/platforms/linux/dev.danielmiguelt.Torno.metainfo.xml.in
           grep -q '<id>ai.storyteller.solvecraft</id>' assets/platforms/linux/dev.danielmiguelt.Torno.metainfo.xml.in
-          grep -qx 'X-Flatpak-RenamedFrom=io.tangencylabs.solidcraft.desktop;ai.storyteller.solidcraft.desktop;ai.storyteller.solvecraft.desktop;' assets/platforms/linux/dev.danielmiguelt.Torno.desktop
-          grep -qF -e '--end-of-life-rebase=' packaging/flatpak-site.sh
           sed -e 's/@VERSION@/0.0.0/' -e 's/@DATE@/2026-01-01/' assets/platforms/linux/dev.danielmiguelt.Torno.metainfo.xml.in >"$RUNNER_TEMP/dev.danielmiguelt.Torno.metainfo.xml"
           appstreamcli validate --no-net --explain "$RUNNER_TEMP/dev.danielmiguelt.Torno.metainfo.xml"
-          python3 -c "import yaml; m = yaml.safe_load(open('packaging/linux/flatpak/dev.danielmiguelt.Torno.bundle.yml')); assert m['id'] == 'dev.danielmiguelt.Torno' and m['command'] == 'torno'"
           python3 -c "import yaml; m = yaml.safe_load(open('packaging/linux/snap/snapcraft.yaml')); assert m['name'] == 'torno' and m['confinement'] == 'strict' and m['apps']['torno']['command'] == 'usr/bin/torno'"
-          python3 -m py_compile packaging/linux/snap-smoke.py
+          python3 -m py_compile packaging/linux/snap-smoke.py packaging/linux/frame_checks.py

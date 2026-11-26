@@ -10,7 +10,7 @@
 # MSI are Authenticode-signed through SignPath Foundation when the SIGNPATH_API_TOKEN secret exists
 # (see the windows job). Nothing else is signed yet.
 #
-#   Linux x86_64, aarch64   AppImage (+ .zsync), .deb, .rpm, .flatpak, .snap, .tar.gz packaging/linux
+#   Linux x86_64, aarch64   AppImage (+ .zsync), .deb, .rpm, .snap, .tar.gz packaging/linux
 #   Arch Linux x86_64, aarch64  .pkg.tar.zst, repackaged from the .tar.gz         the arch job
 #   FreeBSD x86_64          .tar.gz (built in a FreeBSD VM)                        packaging/freebsd
 #   macOS universal         .dmg, and the CLI as a .zip (both archs built in parallel)  packaging/macos
@@ -189,42 +189,6 @@ jobs:
           path: dist/release/*
           if-no-files-found: error
 
-  flatpak:
-    name: Flatpak ${{ matrix.arch }}
-    needs: [version, linux]
-    if: needs.version.outputs.build == 'true'
-    # Repackages the Linux job's tarball (the same binaries as the AppImage/deb/rpm); no Rust
-    # build here. 24.04 for a newer flatpak-builder than 22.04 ships.
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - { arch: x86_64, runner: ubuntu-24.04 }
-          - { arch: aarch64, runner: ubuntu-24.04-arm }
-    env:
-      TORNO_VERSION: ${{ needs.version.outputs.version }}
-      TORNO_BUILD_DATE: ${{ needs.version.outputs.date }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: release-linux-${{ matrix.arch }}
-          path: dist/linux
-      - name: Install flatpak-builder
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends flatpak flatpak-builder librsvg2-common xvfb xauth weston dbus-x11
-          # Ubuntu 24.04's AppArmor blocks the unprivileged user namespaces bubblewrap needs.
-          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
-      - name: Build the Flatpak bundle
-        run: packaging/linux/flatpak-bundle.sh "dist/linux/torno-$TORNO_VERSION-linux-${{ matrix.arch }}.tar.gz"
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: release-flatpak-${{ matrix.arch }}
-          path: dist/release/*.flatpak
-          if-no-files-found: error
-
   arch:
     name: Arch Linux ${{ matrix.arch }}
     needs: [version, linux]
@@ -274,7 +238,7 @@ jobs:
     if: needs.version.outputs.build == 'true'
     # The Snap Store hasn't accepted Torno yet, so a snap failure never holds up a release.
     continue-on-error: true
-    # Repackages the Linux job's tarball, like the Flatpak. On 24.04 because the core24 base is
+    # Repackages the Linux job's tarball. On 24.04 because the core24 base is
     # Ubuntu 24.04, which lets snapcraft build on the runner itself (--destructive-mode).
     runs-on: ${{ matrix.runner }}
     strategy:
@@ -649,7 +613,7 @@ jobs:
 
   release:
     name: GitHub Release or dry-run artifacts
-    needs: [version, linux, flatpak, arch, snap, freebsd, macos, windows, web]
+    needs: [version, linux, arch, snap, freebsd, macos, windows, web]
     # Not for the release gate (packages_only): it builds and checks the packages, nothing more.
     if: needs.version.outputs.build == 'true' && !inputs.packages_only
     runs-on: ubuntu-latest
@@ -676,7 +640,7 @@ jobs:
           shopt -s nullglob
           for f in "torno-$VERSION-"*; do
             case "$f" in
-              *.msi | *-portable.zip | *.dmg | *.AppImage | *.deb | *.rpm | *.flatpak | *.snap | *.pkg.tar.zst)
+              *.msi | *-portable.zip | *.dmg | *.AppImage | *.deb | *.rpm | *.snap | *.pkg.tar.zst)
                 cp -- "$f" "torno-${f#"torno-$VERSION-"}" ;;
             esac
           done

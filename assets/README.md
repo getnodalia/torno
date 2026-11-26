@@ -60,7 +60,7 @@ The CLI still supports arbitrary PNG/ICO exports with `torno-cli icon`.
 | macOS | `icon.icns`, installed in the bundle as `Torno.icns` |
 | Windows executable | `torno-executable.ico`: original DIB/mask representations at 16/24/32/48/64/128/256 px |
 | Windows installer | `torno.ico`: PNG representations at 16/20/24/32/40/48/64/128/256 px; `TORNO_ICONS` override retained |
-| Linux, Nix, deb/rpm, tar, Flatpak, Snap | Copy canonical hicolor images; icon name stays `dev.danielmiguelt.Torno` |
+| Linux, Nix, deb/rpm, tar, Snap | Copy canonical hicolor images; icon name stays `dev.danielmiguelt.Torno` |
 | AppImage | Uses the Linux 256 px image and `.DirIcon` alias |
 | FreeBSD | Shares Linux hicolor images and freedesktop metadata |
 | Web | HTML/Trunk and `manifest.webmanifest` stay in `apps/torno-web/`; copies the Japanese font/licence to `fonts/` and the Noto Sans Arabic, KR, SC and TC fonts with their licences to `fonts/<family>/` (fetched when a drawing's text needs them), uses the collected CSS, and copies the Linux 32/256/512 px images to `icons/` for the favicon and installed app |

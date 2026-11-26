@@ -270,6 +270,6 @@ returns the whole state, for tests and screenshots.
 | Session controls | Slash commands |
 | Auth | An embedded terminal or "open a terminal here" for terminal logins on each OS; logout |
 | Discovery | Read the ACP registry; keychain-aware login check on macOS |
-| Packaging | Make sure every desktop package ships `torno-cli` next to `torno` (Flatpak, AppImage, macOS bundle, Windows zip), or serve MCP from the app binary itself |
+| Packaging | Make sure every desktop package ships `torno-cli` next to `torno` (AppImage, macOS bundle, Windows zip), or serve MCP from the app binary itself |
 | Windows | Job objects instead of `taskkill /T` once there's a safe API for them |
 | API backend | Streaming answers; images in tool results |

@@ -15,7 +15,7 @@ start), skips the "Recover unsaved design?" offer and draws with the software re
 - Windows: run `torno.exe --safe-mode` from a terminal in the install folder, or add
   ` --safe-mode` to the end of a shortcut's *Target*.
 - macOS: `open -a Torno --args --safe-mode`
-- Linux: `torno --safe-mode` (Flatpak: `flatpak run dev.danielmiguelt.Torno --safe-mode`)
+- Linux: `torno --safe-mode`
 
 Setting `TORNO_SAFE_MODE=1` does the same. From 0.10.2, if two launches in a row stop
 before the window opens, the next one starts in safe mode by itself. `TORNO_RENDERER=cpu`
@@ -66,7 +66,6 @@ with a bug report.
 | Windows | `%APPDATA%\Torno` | `%LOCALAPPDATA%\Torno` |
 | macOS | `~/Library/Application Support/Torno` | (the same folder) |
 | Linux | `~/.local/share/torno` | (the same folder); thumbnails in `$XDG_CACHE_HOME/Torno` or `/tmp/Torno` |
-| Linux (Flatpak) | `~/.var/app/dev.danielmiguelt.Torno/data/torno` | (the same folder) |
 
 On Windows, paste `%APPDATA%` or `%LOCALAPPDATA%` into the Explorer address bar to open the
 folder.

@@ -2,20 +2,19 @@
 
 ## Torno's earlier releases
 
-Torno is built from upstream's code, and its releases before the rename carried upstream's name
-in their identifiers. Torno renames all of them (`scripts/rebrand.py`, rules in
-`.github/rebrand.toml`) and reads what those releases wrote:
+Torno's releases before the rename carried another name in their identifiers. Torno renames
+all of them and reads what those releases wrote:
 
 | What | Earlier releases | Now | Shim |
 |---|---|---|---|
-| Design extension | `.solidcraft` <!-- rebrand: keep --> | `.sc` | still opens (`LEGACY_DESIGN_EXTS`, section 1) |
-| Environment variables | `SOLIDCRAFT_*` <!-- rebrand: keep --> | `TORNO_*` | read when the new one is unset (`torno_geom::env`) |
-| Settings and recovery folders | `solidcraft` / `SolidCraft` <!-- rebrand: keep --> | `torno` / `Torno` | copied on the first launch (section 4) |
-| Preferences key | `solidcraft.prefs` <!-- rebrand: keep --> | `torno.prefs` | read when the new key is missing |
-| App id | `io.tangencylabs.solidcraft` <!-- rebrand: keep --> | `dev.danielmiguelt.Torno` | window state and Flatpak data adopted (`LEGACY_APP_ID`) |
-| MCP resources, CLI name | `solidcraft://…`, `solidcraft-cli` <!-- rebrand: keep --> | `torno://…`, `torno-cli` | old URIs still read; agent setups pointing at the old CLI are updated |
+| Design extension | `.solidcraft` | `.sc` | still opens (`LEGACY_DESIGN_EXTS`, section 1) |
+| Environment variables | `SOLIDCRAFT_*` | `TORNO_*` | read when the new one is unset (`torno_geom::env`) |
+| Settings and recovery folders | `solidcraft` / `SolidCraft` | `torno` / `Torno` | copied on the first launch (section 4) |
+| Preferences key | `solidcraft.prefs` | `torno.prefs` | read when the new key is missing |
+| App id | `io.tangencylabs.solidcraft` | `dev.danielmiguelt.Torno` | window state and Flatpak data adopted (`LEGACY_APP_ID`) |
+| MCP resources, CLI name | `solidcraft://…`, `solidcraft-cli` | `torno://…`, `torno-cli` | old URIs still read; agent setups pointing at the old CLI are updated |
 
-File format tags (`"format": "solidcraft/N"`, `solidcraft-theme/1`, `solidcraft-library/2`…) are <!-- rebrand: keep -->
+File format tags (`"format": "solidcraft/N"`, `solidcraft-theme/1`, `solidcraft-library/2`…) are
 not renamed: they are file signatures, so Torno keeps opening its own earlier files and
 upstream's, and upstream's opens Torno's.
 
@@ -53,7 +52,7 @@ uses those, never its own string.
 | Browser file picker | `apps/torno-web/src/disk.rs` (`open_options`, `opens_design`) |
 | Windows | `assets/platforms/windows/torno.wxs`: `.sc` is the design ProgId's extension; `.solidcraft` points at the same ProgId and is in `SupportedTypes` |
 | macOS | `assets/platforms/macos/Info.plist.in`: `sc` and `torno` in the design document type and its `dev.danielmiguelt.Torno.design` UTI |
-| Linux / FreeBSD / Flatpak / Snap | `assets/platforms/linux/dev.danielmiguelt.Torno.mime.xml`: `*.sc` and `*.solidcraft` globs under `application/x-torno`; the `.desktop` file names that type |
+| Linux / FreeBSD / Snap | `assets/platforms/linux/dev.danielmiguelt.Torno.mime.xml`: `*.sc` and `*.solidcraft` globs under `application/x-torno`; the `.desktop` file names that type |
 
 Opening a `.solidcraft` file and pressing **Save** writes that same file: nothing is renamed behind
 the user's back. **Save As** (and every new design, autosave, crash report and component
@@ -124,23 +123,17 @@ Resources are listed as `torno://design` and `torno://commands`.
 
 | Package | Decision | Why |
 |---|---|---|
-| Flatpak app ID / Linux desktop ID | changed in 0.42 from `ai.storyteller.solidcraft` to `dev.danielmiguelt.Torno` | The project's own reverse-DNS domain. The `.desktop`, metainfo and MIME file names, the icon name, and the Wayland `app_id` / X11 class follow it. Existing installs are moved over; see [Linux app ID](#linux-app-id). |
 | macOS bundle ID | changed to `ai.storyteller.solidcraft`, then to `dev.danielmiguelt.Torno`; the CLI's signing identifier is `dev.danielmiguelt.Torno.cli` (was `ai.storyteller.solidcraft-cli`) | No updater depends on it; the app is drag-installed and replaces the old `Torno.app`. Settings live in folders named after the product, not the bundle ID, so they stay. macOS ties privacy permissions (such as access to Documents or Downloads) to the bundle ID, so it asks for them once more after the update. |
 | MSI `UpgradeCode` | **kept** (also through the `io.tangencylabs` move; the Windows build sets no AppUserModelID and its ProgIDs `Torno.Design` / `Torno.Model` don't carry the app ID, so nothing there changes) | So the new MSI upgrades the old install in place. Product name is Torno; the default folder becomes `Program Files\Torno` (the major upgrade removes the old folder). A custom install folder isn't remembered across this one upgrade. |
 
 ## Linux app ID
 
-Releases before the move to Tangency Labs used `ai.storyteller.solidcraft`; releases since use `dev.danielmiguelt.Torno` everywhere (Flatpak,
-deb, rpm, AppImage, Snap, FreeBSD, Nix, and the macOS bundle). The settings and autosave folders
-(`torno` / `Torno`) are named after the product, not the app ID, so outside the Flatpak
-sandbox they don't move. The shims cover the earlier ID:
+Releases before the move to Tangency Labs used `ai.storyteller.solidcraft`; releases since use `dev.danielmiguelt.Torno` everywhere (deb, rpm, AppImage, Snap, FreeBSD, Nix, and the macOS bundle). The settings and autosave folders
+(`torno` / `Torno`) are named after the product, not the app ID, so they don't move. The shims cover the earlier ID:
 
 | Shim | Where | What it does |
 |---|---|---|
-| End-of-life rebase in the Flatpak repository | `packaging/flatpak-site.sh` | Each release's Pages deploy keeps the old `app/ai.storyteller.solidcraft/<arch>/stable` ref (mirrored from the previous deploy) and marks each with `flatpak build-commit-from --end-of-life-rebase=<old id>=dev.danielmiguelt.Torno` (once the repository has the new ref). `flatpak update` then says the old app is end-of-life and offers to replace it with the new one; accepting installs `dev.danielmiguelt.Torno`, uninstalls the old app, and Flatpak moves `~/.var/app/<old id>` to the new id's folder (leaving a symlink at the old path) on the first launch, so settings and autosaves come along unchanged. |
 | AppStream `<replaces>` / `<provides>` | `assets/platforms/linux/dev.danielmiguelt.Torno.metainfo.xml.in` | Software centres treat the new id as the successor of `ai.storyteller.solidcraft` and of its `.desktop` ids. |
-| `X-Flatpak-RenamedFrom` | `assets/platforms/linux/dev.danielmiguelt.Torno.desktop` (both old `.desktop` ids) | Desktops that honour it (GNOME Shell) keep favourites and pinned launchers pointing at the renamed entry. |
-| Read-only access to the old Flatpak data folders | `--filesystem=~/.var/app/ai.storyteller.solidcraft:ro` in `packaging/linux/flatpak/dev.danielmiguelt.Torno.bundle.yml`; `torno_io::legacy_flatpak_paths` (`PREVIOUS_APP_IDS`, newest first), used by `adopt_legacy_settings` and `recovery::default_dir` | When the new app was installed next to an old one (for example from a `.flatpak` bundle, which has no update feed) instead of through the rebase, its first launch copies settings and autosaves from the newest old app's folder that exists, as in section 3. The old folders are not changed. |
 | Old AppImage menu entries | `packaging/linux/AppRun` | An AppImage's first run removes the `ai.storyteller.solidcraft.desktop` entry and icons that an earlier AppImage installed in `~/.local/share` (only entries it wrote itself), so the menu doesn't show the app twice. Test: `packaging/tests/apprun_test.py`. |
 
 deb and rpm need no shim: the package (`torno`) is unchanged, and an upgrade removes the old
@@ -149,24 +142,7 @@ because the new version doesn't ship them; the post-install script refreshes the
 and icon caches, so no stale menu entry is left. The Snap is unaffected apart from its
 `common-id`: snapd names its menu entry after the snap.
 
-Flatpak installed from a downloaded `.flatpak` bundle (no update feed): install the new bundle,
-launch it once (settings and autosaves are copied), then
-`flatpak uninstall --user ai.storyteller.solidcraft`.
-
-**Removal:** keep the end-of-life refs in the Flatpak repository for at least six months after
-the release that moved to `dev.danielmiguelt.Torno` and at least two minor releases; removing
-them strands any install that hasn't run `flatpak update` since. The read-only filesystem grants
-and `legacy_flatpak_paths` can go at the same time. `<replaces>`, `<provides>` and `X-Flatpak-RenamedFrom` are harmless and can stay.
-Tests: `flatpak_twins_map_our_sandbox_data_to_the_old_app_ids`,
-`first_launch_adopts_the_previous_release_settings`.
-
-## Flatpak remotes added from the former website address
-
-The feed has moved twice: from the old address, then from `bherbruck.github.io/torno`
-when the project moved to `getnodalia.github.io/torno` (#1920). A remote added from either address no
-longer finds updates. Point it at the current one:
-`flatpak remote-modify --user --url=https://getnodalia.github.io/torno/flatpak/repo/ torno`
-(use your remote's name), then `flatpak update --user`.
+Tests: `first_launch_adopts_the_previous_release_settings`.
 
 ## Split pieces in designs saved before format 14
 

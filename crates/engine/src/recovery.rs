@@ -83,7 +83,7 @@ pub fn cache_dir() -> Option<PathBuf> {
 /// The recovery folder under the per-user data `root`, and the folder earlier releases used.
 /// Windows and macOS name the app's folder in title case, other systems in lower case.
 fn dirs_under(root: &Path, title_case: bool) -> (PathBuf, PathBuf) {
-    let (name, legacy) = if title_case { ("Torno", "SolidCraft") } else { ("torno", "solidcraft") }; // rebrand: keep
+    let (name, legacy) = if title_case { ("Torno", "SolidCraft") } else { ("torno", "solidcraft") };
     (root.join(name).join("recovery"), root.join(legacy).join("recovery"))
 }
 
@@ -519,9 +519,9 @@ mod tests {
     #[test]
     fn recovery_dirs_and_their_legacy_names() {
         let (dir, legacy) = super::dirs_under(Path::new("/data"), false);
-        assert_eq!((dir.as_path(), legacy.as_path()), (Path::new("/data/torno/recovery"), Path::new("/data/solidcraft/recovery"))); // rebrand: keep
+        assert_eq!((dir.as_path(), legacy.as_path()), (Path::new("/data/torno/recovery"), Path::new("/data/solidcraft/recovery")));
         let (dir, legacy) = super::dirs_under(Path::new("/data"), true);
-        assert_eq!((dir.as_path(), legacy.as_path()), (Path::new("/data/Torno/recovery"), Path::new("/data/SolidCraft/recovery"))); // rebrand: keep
+        assert_eq!((dir.as_path(), legacy.as_path()), (Path::new("/data/Torno/recovery"), Path::new("/data/SolidCraft/recovery")));
     }
 
     use super::*;

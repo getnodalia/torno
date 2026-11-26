@@ -37,7 +37,6 @@ Where Torno can replace itself safely, the window also has **Update now**:
 | Windows installer (`.msi`) | **Install (closes Torno)**: downloads and verifies the `.msi`, closes Torno (asking about unsaved designs first) and starts the installer |
 | Windows portable `.zip` or `.exe` | Downloads and verifies the package, swaps in the new `torno.exe` (and `torno-cli.exe`) and offers **Restart now**; the old file is removed at the next start |
 | macOS | **Update now (restarts Torno)**: downloads and verifies the `.dmg`, closes Torno (asking about unsaved designs first), replaces `Torno.app` where it is installed, checks that the new app is signed by the same publisher and starts it; if the new copy doesn't start, the old one is put back. A copy that can't be replaced where it runs (opened from the disk image, in a folder you can't write to, or moved by macOS to a temporary place) gets **Download and open** instead, and so does any copy when you turn off **Update now replaces the app and restarts** in Preferences ▸ General (`update_replaces_app`): the disk image opens and you drag the new Torno to Applications |
-| Flatpak, Snap, `.deb`, `.rpm`, `.tar.gz` | Nothing: your package manager updates these (the window shows the command), or you unpack the new archive |
 
 Every download is verified before anything changes: its SHA-256 must match the release's
 `SHA256SUMS.txt`, fetched over HTTPS from the same release, and, once the project signs its
@@ -63,7 +62,7 @@ install it, and **Download** opens the release page.
 Download 0.15.0 or later once yourself, from the release page or the
 [download links](https://github.com/tangency-labs/solidcraft#download), and install it over the old
 version as you first installed it. From 0.15.0 on, Torno accepts either address, and
-**Update now** works again. Package managers (Flatpak, Snap, WinGet, `.deb`, `.rpm`) aren't
+**Update now** works again. Package managers (Snap, WinGet, `.deb`, `.rpm`) aren't
 affected.
 
 ## What is sent
@@ -121,7 +120,6 @@ and Torno picks the one matching how it was installed:
 | Installed as | Detected by | Download | How to update |
 |---|---|---|---|
 | AppImage | `APPIMAGE` is set | `torno-linux-<arch>.AppImage` | Replace the old AppImage with the new one |
-| Flatpak | `FLATPAK_ID` is set | doesn't check (see below) | `flatpak update dev.danielmiguelt.Torno` |
 | Snap from the Snap Store | `SNAP` is set | release page | `sudo snap refresh torno` (snapd also refreshes by itself) |
 | Snap from a downloaded file | `SNAP_REVISION` starts with `x` | `torno-linux-<arch>.snap` | `sudo snap install --dangerous ./torno-linux-<arch>.snap` |
 | `.deb` | under `/usr`, dpkg knows `torno` | `torno-linux-<arch>.deb` | `sudo apt install ./torno-linux-<arch>.deb` |
