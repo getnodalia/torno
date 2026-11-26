@@ -168,7 +168,8 @@ fn convert(session: &mut Session, importer: &Importer, path: &str, options: &Val
                 .name("plugin-import".into())
                 .stack_size(stack)
                 .spawn_scoped(scope, || {
-                    let import = || nodalia_plugin_wasm::run_import(host, &package.manifest, &package.component, &importer.entry, options, &request).1;
+                    let import =
+                        || nodalia_plugin_wasm::run_import(host, &package.manifest, &package.component, &importer.entry, options, &request).1;
                     // The worker's progress card and Cancel follow the import onto this thread.
                     match progress {
                         Some(progress) => torno_doc::progress::watch(progress, import),

@@ -12,8 +12,11 @@ use torno_io::safe_zip;
 /// to 64 MiB) beside its manifest. A command plugin's component stays within 16 MiB (checked
 /// once the manifest says which it is).
 pub const MAX_ZIP_BYTES: usize = 80 << 20;
-pub const LIMITS: safe_zip::Limits =
-    safe_zip::Limits { max_entries: 256, max_entry_bytes: nodalia_plugin::MAX_IMPORTER_COMPONENT_BYTES as u64, max_total_bytes: MAX_ZIP_BYTES as u64 };
+pub const LIMITS: safe_zip::Limits = safe_zip::Limits {
+    max_entries: 256,
+    max_entry_bytes: nodalia_plugin::MAX_IMPORTER_COMPONENT_BYTES as u64,
+    max_total_bytes: MAX_ZIP_BYTES as u64,
+};
 
 /// Why a `.zip` was not installed.
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]

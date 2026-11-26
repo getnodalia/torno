@@ -763,8 +763,10 @@ mod tests {
     fn plugin_crates_are_shared_and_may_use_each_other() {
         assert_eq!(classify("nodalia-plugin"), Some(Class::Shared));
         assert_eq!(classify("nodalia-plugin-wasm"), Some(Class::Shared));
-        let g =
-            [c("nodalia-plugin", &[("serde", Normal, false)]), c("nodalia-plugin-wasm", &[("nodalia-plugin", Normal, true), ("wasmtime", Normal, false)])];
+        let g = [
+            c("nodalia-plugin", &[("serde", Normal, false)]),
+            c("nodalia-plugin-wasm", &[("nodalia-plugin", Normal, true), ("wasmtime", Normal, false)]),
+        ];
         assert!(check(&g).is_empty());
     }
 
