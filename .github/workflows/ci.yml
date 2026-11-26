@@ -551,19 +551,81 @@ jobs:
         if: always()
         run: if command -v sccache >/dev/null; then sccache --show-stats; else echo "sccache was not set up; built without it"; fi
 
-  tests:
-    name: Native Linux tests
+  tests-build:
+    name: Native Linux test build
+    # Main and develop only. A cold build of the whole workspace (about 650 crates, 4 vCPUs) takes
+    # more than an hour, and the six test shards below must not each repeat it: this job builds
+    # every test binary once and saves the build cache, and the shards start from it. A pull
+    # request has no use for it: it restores the cache main saved last.
     needs: changes
-    if: ${{ !cancelled() && needs.changes.result == 'success' && needs.changes.outputs.native == 'true' }}
-    # Builds the tests and runs them in one job: there is no archive to upload
-    # and download (3 GB on a full run), and the job starts beside the repository checks, not
-    # after them. nextest hands tests to its threads as they free up, the slowest first (priority
-    # in .config/nextest.toml), so they start at once and no core idles at the end.
+    if: ${{ !cancelled() && needs.changes.result == 'success' && needs.changes.outputs.native == 'true' && github.event_name != 'pull_request' }}
     runs-on: ubuntu-24.04
-    # A standard runner has 4 vCPUs, and a cold build (no cache: only main saves it) compiles about
-    # 650 crates before the first test starts, which took more than 60 minutes. Main therefore gets
-    # room to finish once and save the cache; pull requests restore it and need far less.
-    timeout-minutes: ${{ github.event_name == 'pull_request' && 90 || 180 }}
+    timeout-minutes: 180
+    env:
+      CARGO_INCREMENTAL: "0"
+      RUSTC_WRAPPER: sccache
+      SCCACHE_DIR: /home/runner/.cache/sccache
+      SCCACHE_CACHE_SIZE: 20G
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # This job has died with "The hosted runner lost communication with the server" at 33, 64,
+      # 69, 70, 77 and 83 minutes, mid-test and with no log: the runner ran out of memory, disk or
+      # CPU for its own agent. Swap, a freed disk and a niced test run each remove one cause.
+      - name: Add swap
+        run: scripts/ci/add-swap.sh
+      - name: Free disk space
+        run: scripts/ci/free-disk.sh
+      - name: Size parallel compiles to the job's memory
+        run: scripts/ci/build-jobs.sh
+      - uses: dtolnay/rust-toolchain@stable
+      # Only this job saves the cache (main and develop); the test shards restore it, read-only.
+      # It saves even if the job fails part-way, so a build that dies late still leaves its work.
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: native-tests
+          save-if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' }}
+          cache-on-failure: true
+      - name: Set up compiler cache
+        id: sccache
+        uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
+        with:
+          version: v0.16.0
+        # A failed download of sccache (GitHub release outages answer 504) must not fail the build.
+        continue-on-error: true
+      - name: Build without the compiler cache if it could not be set up
+        if: steps.sccache.outcome == 'failure'
+        run: echo "RUSTC_WRAPPER=" >> "$GITHUB_ENV"
+      - uses: taiki-e/install-action@1168f6810a3cb30a3514bf5756a3b7f0422c6df8 # v2.87.28
+        with:
+          tool: cargo-nextest
+      - name: Build every test binary
+        run: nice -n 10 cargo nextest run --workspace --no-run --cargo-profile ci --locked --profile ci
+      - name: Compiler cache statistics
+        if: always()
+        run: if command -v sccache >/dev/null; then sccache --show-stats; else echo "sccache was not set up; built without it"; fi
+
+  tests:
+    name: Native Linux tests (${{ matrix.shard }})
+    needs: [changes, tests-build]
+    # The build job runs on main and develop only: a pull request has no need of it (skipped), a
+    # failed build leaves nothing to test. `sample` is the action matrix sample, which pull
+    # requests leave out.
+    if: ${{ !cancelled() && needs.changes.result == 'success' && needs.changes.outputs.native == 'true' && (needs.tests-build.result == 'success' || needs.tests-build.result == 'skipped') && (matrix.shard != 'sample' || github.event_name != 'pull_request') }}
+    # The workspace's tests (about 19,500 on main) dealt out in turn to six shards, each a standard
+    # runner, plus the action matrix sample on its own (it reserves every core for itself). One
+    # runner took more than 90 minutes for them and the long runs died ("The hosted runner lost
+    # communication with the server"); a shard takes about a quarter of an hour of tests. Each
+    # shard builds its own test binaries from the cache and is graded on its own against
+    # tests/KNOWN_FAILING_TESTS (a listed test that is in another shard did not run here, which
+    # is neither a pass nor a failure). `ci` requires every shard.
+    runs-on: ubuntu-24.04
+    # A standard runner has 4 vCPUs. The shards restore the build cache (Native Linux test build
+    # saves it on main), so what they compile is the workspace's own crates.
+    timeout-minutes: ${{ github.event_name == 'pull_request' && 90 || 120 }}
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6, sample]
     env:
       # Pictures (snapshots, screenshots, ui.render, the viewport's offscreen tests) are drawn on
       # the GPU. The runner has none: Mesa's lavapipe (software Vulkan) draws them, and a test that
@@ -595,14 +657,12 @@ jobs:
       - name: Size parallel compiles to the job's memory
         run: scripts/ci/build-jobs.sh
       - uses: dtolnay/rust-toolchain@stable
-      # Main saves the cache; every other run restores it, read-only. It saves even when a test
-      # fails: with tests failing on main, the default (save only after a passing job) never
-      # saved one, and every run started cold.
+      # Every shard restores the cache Native Linux test build saved on main (a pull request restores main's
+      # last one) and saves nothing: six shards would each upload the same several gigabytes.
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           key: native-tests
-          save-if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' }}
-          cache-on-failure: true
+          save-if: false
       - name: Set up compiler cache
         id: sccache
         uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
@@ -616,17 +676,18 @@ jobs:
       - uses: taiki-e/install-action@1168f6810a3cb30a3514bf5756a3b7f0422c6df8 # v2.87.28
         with:
           tool: cargo-nextest
-      - name: Run tests
+      - name: Run one shard of the tests
         env:
           EVENT_NAME: ${{ github.event_name }}
           FULL: ${{ needs.changes.outputs.full }}
           PACKAGES: ${{ needs.changes.outputs.packages }}
+          SHARD: ${{ matrix.shard }}
         run: |
           # Pull requests skip the heavy tests (default-filter in .config/nextest.toml); `default()`
           # below is that filter, so a pull request still runs only what it ran before.
           base='default()'
           if [ "$EVENT_NAME" = pull_request ]; then
-            # The action matrix sample (about 6 minutes on all cores) runs in the merge queue, on
+            # The action matrix sample (about 6 minutes on 32 cores) runs in the merge queue, on
             # main and nightly, not on every pull request push.
             base='default() & not (binary(action_matrix) & test(=action_matrix_sample))'
           fi
@@ -642,6 +703,15 @@ jobs:
           if [ "$FULL" != true ]; then scope=(); for p in $PACKAGES; do scope+=(-p "$p"); done; fi
           # The GPU path tracer's tests run in their own job (GPU path tests): one at a time, they
           # took about 36 of this job's 45 minutes.
+          # `count` deals the tests out in turn, so a slow binary is spread over every shard.
+          sample='binary(action_matrix) & test(=action_matrix_sample)'
+          if [ "$SHARD" = sample ]; then
+            filter="$sample"
+            partition=()
+          else
+            filter="($base) & not (package(=torno-gpu) & test(/^path::/)) & not ($sample)"
+            partition=(--partition "count:$SHARD/6")
+          fi
           # A failed test does not fail the step by itself: the tests known to fail today
           # (tests/KNOWN_FAILING_TESTS) may fail, any other fails it, and so does a listed test
           # that passes. nextest's exit code 100 is "tests failed"; any other is its own error
@@ -650,13 +720,14 @@ jobs:
           # `nice` keeps the runner's own agent responsive while the tests use every core: a starved
           # agent is another way to lose "communication with the server".
           nice -n 10 cargo nextest run "${scope[@]}" --cargo-profile ci --locked --profile ci --no-tests=pass \
-            --ignore-default-filter -E "($base) & not (package(=torno-gpu) & test(/^path::/))" || status=$?
+            --ignore-default-filter -E "$filter" "${partition[@]}" || status=$?
           if [ "$status" -ne 0 ] && [ "$status" -ne 100 ]; then exit "$status"; fi
           cargo xtask known-failing --junit "$junit"
       # Every command label needs an English catalog entry (#8542). The label table is the CLI's
       # command registry, so this builds the CLI in the profile the tests just used (the shared
       # crates are cached) and reads it. Skipped when no selected package can change the table.
       - name: Command labels in the translation catalogs
+        if: ${{ matrix.shard == 1 }}
         env:
           FULL: ${{ needs.changes.outputs.full }}
           PACKAGES: ${{ needs.changes.outputs.packages }}
@@ -674,7 +745,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: junit
+          name: junit-tests-${{ matrix.shard }}
           path: ${{ env.CARGO_TARGET_DIR || 'target' }}/nextest/ci/junit.xml
           retention-days: 7
 
@@ -1016,7 +1087,7 @@ jobs:
     # commit's real run instead: the merge queue reads `ci` from the newest run of a commit, so a
     # run without a passing `ci` would block a pull request that passed (#1850, #3182, #3252).
     name: ci
-    needs: [changes, checks, quick-compile, clippy, build-tests, tests, gpu-path-tests, doc-tests, oracle, windows-fxc, windows-startup, dependency-advisories, wasm, solidcore, solidcore-standalone]
+    needs: [changes, checks, quick-compile, clippy, build-tests, tests-build, tests, gpu-path-tests, doc-tests, oracle, windows-fxc, windows-startup, dependency-advisories, wasm, solidcore, solidcore-standalone]
     if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
     runs-on: ubuntu-24.04
     permissions:
@@ -1062,6 +1133,7 @@ jobs:
           DOCTESTS: ${{ needs.changes.outputs.doctests }}
           CLIPPY: ${{ needs.clippy.result }}
           BUILD: ${{ needs.build-tests.result }}
+          TESTS_BUILD: ${{ needs.tests-build.result }}
           EVENT_NAME: ${{ github.event_name }}
           TESTS: ${{ needs.tests.result }}
           GPU_RUN: ${{ needs.changes.outputs.gpu }}
@@ -1091,6 +1163,10 @@ jobs:
               test "$BUILD" = success
             fi
             test "$TESTS" = success
+            # Main and develop build the test binaries once (and save the cache) before the shards.
+            if [ "$EVENT_NAME" != pull_request ]; then
+              test "$TESTS_BUILD" = success
+            fi
           fi
           # The same output decides whether the GPU path tests run (their job's `if`).
           if [ "$GPU_RUN" = true ]; then
