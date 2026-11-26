@@ -148,7 +148,7 @@ fn convert(session: &mut Session, importer: &Importer, path: &str, options: &Val
         && Path::new(path).parent().is_some_and(|folder| torno_io::vfs::check(&folder.to_string_lossy()).is_ok());
     #[cfg(all(feature = "plugins", any(target_arch = "x86_64", target_arch = "aarch64")))]
     {
-        let request = craft_plugin_wasm::ImportRequest { path: PathBuf::from(path), input_folder };
+        let request = nodalia_plugin_wasm::ImportRequest { path: PathBuf::from(path), input_folder };
         let host = TornoHost {
             session: Session::default(),
             transaction: None,
@@ -168,7 +168,7 @@ fn convert(session: &mut Session, importer: &Importer, path: &str, options: &Val
                 .name("plugin-import".into())
                 .stack_size(stack)
                 .spawn_scoped(scope, || {
-                    let import = || craft_plugin_wasm::run_import(host, &package.manifest, &package.component, &importer.entry, options, &request).1;
+                    let import = || nodalia_plugin_wasm::run_import(host, &package.manifest, &package.component, &importer.entry, options, &request).1;
                     // The worker's progress card and Cancel follow the import onto this thread.
                     match progress {
                         Some(progress) => torno_doc::progress::watch(progress, import),

@@ -32,7 +32,7 @@ pub fn tools(session: &mut Session, name: Option<&str>) -> Vec<PluginTool> {
         session.plugin_state.register_discovered(id.clone(), folder.clone());
         for entry in &runtime.entries {
             let (kind, input_schema) = match entry.kind {
-                EntryKind::Command => (PluginToolKind::Command, craft_plugin::strict_input_schema(&entry.input_schema)),
+                EntryKind::Command => (PluginToolKind::Command, nodalia_plugin::strict_input_schema(&entry.input_schema)),
                 EntryKind::Importer => (PluginToolKind::Importer, importer_schema(entry)),
             };
             found.push(PluginTool {
@@ -71,7 +71,7 @@ pub(super) fn describe(session: &Session, id: &str) -> Result<Option<Value>> {
     let Some(entry) = runtime.entries.iter().find(|e| e.name == name) else { return Ok(None) };
     Ok(Some(match entry.kind {
         EntryKind::Command => {
-            let inputs = craft_plugin::strict_input_schema(&entry.input_schema);
+            let inputs = nodalia_plugin::strict_input_schema(&entry.input_schema);
             json!({"id":id,"label":name,"kind":"command","plugin":plugin,
                 "params":"approval: the package hash (plugin.tools {name} or plugin.inspect), params: the entry's declared inputs; as a tool, the inputs alone",
                 "input":{"type":"object","required":["approval","params"],"additionalProperties":false,"properties":{
@@ -97,7 +97,7 @@ fn importer_schema(entry: &Entry) -> Value {
         "type": "object",
         "properties": {
             "path": {"type": "string", "description": format!("The file to open ({})", extensions.join(", "))},
-            "options": craft_plugin::strict_input_schema(&entry.input_schema),
+            "options": nodalia_plugin::strict_input_schema(&entry.input_schema),
         },
         "required": ["path"],
         "additionalProperties": false,
@@ -147,7 +147,7 @@ fn explain(error: HostError, manifest: &Manifest, grants: &Grants, entry: &str) 
     let Some(runtime) = manifest.runtime.as_ref() else { return error.into() };
     match &error {
         HostError::PermissionDenied { permission } => {
-            if let Some(import) = permission.strip_prefix(craft_plugin::READ_ENTRY_IMPORT) {
+            if let Some(import) = permission.strip_prefix(nodalia_plugin::READ_ENTRY_IMPORT) {
                 return read_only(id, entry, "host import", import);
             }
             if let Some(command) = permission.strip_prefix("edit command ").and_then(|p| p.strip_suffix(" from read entry")) {

@@ -6,15 +6,15 @@ This is the implemented one-shot native runtime. It does not implement every par
 [Utilities placement proposal #4933](https://github.com/tangency-labs/solidcraft/pull/4933).
 The [current plugin RFC](rfcs/0002-plugins.md), especially its Decisions section, takes
 precedence over these earlier proposals. The shared command world is defined in
-[`craft-plugin`'s WIT](../crates/craft-plugin/wit/plugin.wit). The package
+[`nodalia-plugin`'s WIT](../crates/nodalia-plugin/wit/plugin.wit). The package
 manifest uses an optional `runtime` block so old metadata-only packages still work. Its manifest
 layout and explicit per-invocation approval flow are deliberately documented as experimental,
 not as a claim that the outstanding design proposals have been accepted.
 
 ## Boundary and lifecycle
 
-`craft-plugin` owns the manifest, typed errors, permissions and `PluginHost` trait.
-`craft-plugin-wasm` runs components against that trait without app dependencies.
+`nodalia-plugin` owns the manifest, typed errors, permissions and `PluginHost` trait.
+`nodalia-plugin-wasm` runs components against that trait without app dependencies.
 Torno's engine implements the trait with its command schemas and transaction surface.
 The runtime takes ownership of a host and returns `(host, result)` on success and failure.
 This satisfies Wasmtime's requirement for store data without borrowed references. Torno
@@ -146,7 +146,7 @@ The WIT package is `craft:plugin@0.2.0`. Its interfaces (`types`, `commands`, `l
 capabilities arrive as their own interfaces, each named and versioned on its own in the manifest:
 `ui`, `viewport`, `formats` and `storage`. While a version is 0.x, a minor version may break the
 previous one. 0.2 added `plugin-error.unsupported`; the host also serves the frozen
-`craft:plugin@0.1.0` (`crates/craft-plugin/wit-0.1/plugin.wit`, `OLDER_CAPABILITIES`), choosing
+`craft:plugin@0.1.0` (`crates/nodalia-plugin/wit-0.1/plugin.wit`, `OLDER_CAPABILITIES`), choosing
 the bindings by the version the component's imports and exports name, so plugins built against
 0.1 run unchanged and see `invalid-input` where 0.2 has `unsupported`.
 
@@ -280,7 +280,7 @@ describe the same cases. A failure never retries the component, raises its limit
 a partial transaction.
 
 After an entry returns valid JSON, the runtime writes consumed fuel, remaining fuel and the
-configured fuel limit to the `craft_plugin_wasm` debug log target. These counters describe guest
+configured fuel limit to the `nodalia_plugin_wasm` debug log target. These counters describe guest
 execution before the application commits changes or publishes staged files. In the CLI, pass `--debug` to see these counters on stderr.
 Normal command output and plugin result JSON are unchanged. The counter message contains no
 model data or package paths.
@@ -297,7 +297,7 @@ Plugin packages, examples and converters live outside this repository, as specif
 [the plugin RFC](rfcs/0002-plugins.md). This repository contains the host, WIT and synthetic test
 fixtures. The host compiles no plugin algorithm into Torno. Rust first builds a core module with WIT metadata; `wasm-tools component new`
 wraps it as a component without a WASI adapter. Other languages may use the same published
-[WIT](../crates/craft-plugin/wit/plugin.wit) if they produce compatible components without unsupported imports;
+[WIT](../crates/nodalia-plugin/wit/plugin.wit) if they produce compatible components without unsupported imports;
 JavaScript works with `jco componentize` with its WASI features turned off (`stdio`, `random`,
 `clocks`, `http`, `fetch-event`). A Rust guest calls `craft::plugin::commands::run` and implements
 `exports::craft::plugin::entry::Guest`; a JavaScript guest imports `run` from

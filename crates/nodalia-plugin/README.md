@@ -1,4 +1,4 @@
-# craft-plugin
+# nodalia-plugin
 
 App-independent contracts for one-shot plugins in Craft apps. Commands and schemas are
 JSON data supplied by the app. This crate has no Torno or CAD dependency and runs
@@ -29,7 +29,7 @@ capability `commands@0.2` (`CAPABILITIES`). A manifest lists the capabilities it
 `plugin-error.unsupported`; the frozen [0.1 WIT](wit-0.1/plugin.wit) (`WIT_0_1`,
 `OLDER_CAPABILITIES`) is still served, so plugins built against it keep running.
 `HostError::OverCeiling` and `HostError::Exhausted` carry a limit's numbers.
-The [Wasm runtime](../craft-plugin-wasm/README.md) begins an app transaction and requests
+The [Wasm runtime](../nodalia-plugin-wasm/README.md) begins an app transaction and requests
 commit or rollback after guest execution. It stages granted file writes until the guest
 succeeds and the app commits. File publication after app commit is not atomic across
 multiple targets; a publication failure can leave files changed. These contracts do not
@@ -52,6 +52,6 @@ native execution requirement.
 
 ## Validation
 
-From the repository root, `cargo test -p craft-plugin` exercises manifests, permissions,
+From the repository root, `cargo test -p nodalia-plugin` exercises manifests, permissions,
 entries and limits. `cargo xtask shared` checks extraction and tests an isolated workspace.
 See [the runtime reference](../../docs/plugin-runtime.md) for the Torno adapter policy.

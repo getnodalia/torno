@@ -1,7 +1,7 @@
-# craft-plugin-wasm
+# nodalia-plugin-wasm
 
 App-independent Wasmtime component execution for
-[`craft-plugin`](../craft-plugin/README.md). The app supplies commands through `PluginHost`;
+[`nodalia-plugin`](../nodalia-plugin/README.md). The app supplies commands through `PluginHost`;
 this crate has no Torno or CAD dependency.
 
 ## Public API and lifecycle
@@ -32,7 +32,7 @@ Native execution is provided on x86-64 and AArch64. On other architectures, incl
 browser `wasm32`, functions return the supplied host and `HostError::Trap` explaining that
 execution is unsupported. There is no browser execution backend.
 
-The [WIT](../craft-plugin/wit/plugin.wit) imports app commands, logging, progress,
+The [WIT](../nodalia-plugin/wit/plugin.wit) imports app commands, logging, progress,
 cancellation, named files and a clock. No WASI is linked. Commands are intersected with
 the host catalog; read entries cannot invoke commands marked edit, and a command in a
 sensitive group needs that group requested by the manifest and granted by the host. A
@@ -53,7 +53,7 @@ cannot forcibly interrupt an arbitrary native host call.
 
 ## Validation
 
-From the repository root, `cargo test -p craft-plugin-wasm` exercises original synthetic
+From the repository root, `cargo test -p nodalia-plugin-wasm` exercises original synthetic
 components, transactions, traps, limits, file scope and staged writes on supported native
 targets. `cargo xtask shared` also checks isolated shared-crate builds and tests.
 See [the runtime reference](../../docs/plugin-runtime.md) for full limits and app policy.

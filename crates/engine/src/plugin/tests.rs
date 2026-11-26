@@ -14,7 +14,7 @@ fn named_tool_refusals_keep_plugin_file_and_budget_details() {
                 json!({"plugin":"sample","grant":"files.write:project","approve":tools::APPROVE}),
             ),
             (
-                HostError::PermissionDenied { permission: format!("{}write-file", craft_plugin::READ_ENTRY_IMPORT) },
+                HostError::PermissionDenied { permission: format!("{}write-file", nodalia_plugin::READ_ENTRY_IMPORT) },
                 json!({"plugin":"sample","entry":"make","refused_import":"write-file"}),
             ),
             (
@@ -188,7 +188,7 @@ fn every_built_command_is_reachable_and_sensitive_ones_need_their_group() {
 fn file_scopes_require_separate_read_and_write_approvals() {
     let folder = torno_io::vfs::temp_dir().join("sc-readonly-grant-18793");
     let approved = vec![FileGrant { name: "data".into(), folder: folder.clone(), read: true, write: false }];
-    let manifest = vec![craft_plugin::FilePermission { name: "data".into(), read: true, write: false }];
+    let manifest = vec![nodalia_plugin::FilePermission { name: "data".into(), read: true, write: false }];
     assert_eq!(approved_file_folders(&approved, &manifest, false), vec![folder.clone()]);
     assert!(approved_file_folders(&approved, &manifest, true).is_empty());
 
@@ -344,7 +344,7 @@ fn a_failure_message_shows_braces_in_a_file_name_or_reason_as_they_are() {
     let failure = |file: &str, reason: &str| PluginFailure {
         plugin: "Sample".into(),
         file: Some(file.into()),
-        error: craft_plugin::HostError::Unsupported { reason: reason.into() },
+        error: nodalia_plugin::HostError::Unsupported { reason: reason.into() },
     };
     assert_eq!(failure("part{reason}.smp", "no {file} solids").text(), "Sample does not support part{reason}.smp: no {file} solids");
     assert_eq!(failure("part.smp", "no solids").text(), "Sample does not support part.smp: no solids");
@@ -564,7 +564,7 @@ mod native {
                 let error = f.run(&mut s).unwrap_err();
                 let expected = if write { "files.write:project" } else { "files.read:project" };
                 assert!(
-                    matches!(error.host_error(), Some(craft_plugin::HostError::PermissionDenied { permission }) if permission == expected),
+                    matches!(error.host_error(), Some(nodalia_plugin::HostError::PermissionDenied { permission }) if permission == expected),
                     "write={write}, declared={declared}: {error}"
                 );
                 assert_eq!(std::fs::read(&secret).unwrap(), b"private contents");
@@ -664,7 +664,7 @@ mod native {
         let mut s = Session::default();
         let before = s.doc.to_json();
         let error = f.run(&mut s).unwrap_err();
-        assert!(matches!(error.host_error(), Some(craft_plugin::HostError::PermissionDenied { permission }) if permission == "net"));
+        assert!(matches!(error.host_error(), Some(nodalia_plugin::HostError::PermissionDenied { permission }) if permission == "net"));
         assert_eq!(s.doc.to_json(), before);
         assert!(s.undo.is_empty());
     }
@@ -686,7 +686,7 @@ mod native {
             let mut s = Session::default();
             let before = s.doc.to_json();
             let error = f.run(&mut s).unwrap_err();
-            assert!(matches!(error.host_error(), Some(craft_plugin::HostError::PermissionDenied { .. })), "{import}: {error}");
+            assert!(matches!(error.host_error(), Some(nodalia_plugin::HostError::PermissionDenied { .. })), "{import}: {error}");
             assert!(error.to_string().contains(&import), "{error}");
             assert_eq!(s.doc.to_json(), before);
             assert!(s.undo.is_empty());
@@ -707,7 +707,7 @@ mod native {
         assert_eq!(entry["commands"], json!(["sample.make"]));
         assert_eq!(entry["manifest"]["runtime"]["entries"][0]["input_schema"], schema);
         let description = s.execute("engine.describe", &json!({"command":"sample.make"})).unwrap();
-        assert_eq!(description["input"]["properties"]["params"], craft_plugin::strict_input_schema(&schema), "as strict as the check");
+        assert_eq!(description["input"]["properties"]["params"], nodalia_plugin::strict_input_schema(&schema), "as strict as the check");
         assert_eq!(description["tool"]["input"], description["input"]["properties"]["params"], "the tool takes the inputs alone");
         assert_eq!(description["effect"], "edit");
         assert!(s.doc.features.is_empty());
@@ -744,7 +744,7 @@ mod native {
             let history = (s.undo.len(), s.redo.len());
             let error = f.run(&mut s).unwrap_err();
             assert!(
-                matches!(error.host_error(), Some(craft_plugin::HostError::PermissionDenied { permission }) if permission.contains("read entry")),
+                matches!(error.host_error(), Some(nodalia_plugin::HostError::PermissionDenied { permission }) if permission.contains("read entry")),
                 "{command}: {error}"
             );
             assert_eq!(s.doc.to_json(), before);
@@ -1954,7 +1954,7 @@ mod install_zip {
         assert!(matches!(slip, InstallError::Archive(safe_zip::Error::UnsafeEntry { .. })), "{slip}");
         let absolute = unpack(&zip(&[("/plugin.json", good)])).unwrap_err();
         assert!(matches!(absolute, InstallError::Archive(safe_zip::Error::UnsafeEntry { .. })), "{absolute}");
-        let huge = vec![0u8; craft_plugin::MAX_IMPORTER_COMPONENT_BYTES + 1];
+        let huge = vec![0u8; nodalia_plugin::MAX_IMPORTER_COMPONENT_BYTES + 1];
         let bomb = unpack(&zip(&[("plugin.json", good), ("plugin.wasm", &huge[..])])).unwrap_err();
         assert!(matches!(bomb, InstallError::Archive(safe_zip::Error::EntryTooLarge { .. })), "{bomb}");
         // A command plugin's component stays within 16 MiB; only an importer's may be larger.

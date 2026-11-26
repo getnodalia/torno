@@ -108,6 +108,17 @@ to = 'git = "https://github.com/getnodalia/foundation"'
 from = '"https://github.com/storytold/craft-libs"'
 to = '"https://github.com/getnodalia/foundation"'
 
+# The plugin crates are shared and app-agnostic, so they are Nodalia's. The WIT package
+# `craft:plugin` stays as it is: it is the interface existing plugins import, so renaming it would
+# stop them loading.
+[[replace]]
+from = "craft-plugin"
+to = "nodalia-plugin"
+
+[[replace]]
+from = "craft_plugin"
+to = "nodalia_plugin"
+
 [[replace]]
 from = "io.tangencylabs.solidcraft"
 to = "dev.danielmiguelt.Torno"

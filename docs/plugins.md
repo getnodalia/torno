@@ -3,9 +3,9 @@
 [RFC 0002: Plugins](rfcs/0002-plugins.md) defines the plugin API and phases.
 Phase 1 splits the host into two app-agnostic crates:
 
-- `crates/craft-plugin` owns the generic WIT contract, manifest, permissions,
+- `crates/nodalia-plugin` owns the generic WIT contract, manifest, permissions,
   entry input schemas and typed host errors. It has no wasmtime dependency.
-- `crates/craft-plugin-wasm` runs WebAssembly components against that contract
+- `crates/nodalia-plugin-wasm` runs WebAssembly components against that contract
   with fuel, memory and stack limits. Its linker exposes no network imports.
 
 An app implements `PluginHost`: it supplies command schemas, each command's
@@ -334,7 +334,7 @@ not handle it, such as a file with no solids or a newer version of its format. U
 bracket.smp: ..." instead of an "invalid" file. Plugins built against 0.1 (`commands@0.1`,
 `formats@0.1`, `evaluate@0.1`) still run unchanged: the host reads the WIT version from the
 component's own imports and exports, and serves the frozen 0.1 WIT
-(`crates/craft-plugin/wit-0.1/plugin.wit`) to those. A component that names a version the host does
+(`crates/nodalia-plugin/wit-0.1/plugin.wit`) to those. A component that names a version the host does
 not run, or two versions at once, is refused before any of its code runs.
 
 ## Commands and permissions

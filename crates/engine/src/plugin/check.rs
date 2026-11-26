@@ -1,6 +1,6 @@
 //! `plugin.check`: everything the app checks before it installs or runs a plugin, on a package
 //! that is not installed, without running any of its code. It goes through the same code as
-//! Install ([`install::from_files`]) and a call ([`craft_plugin_wasm::check_component`]), so the
+//! Install ([`install::from_files`]) and a call ([`nodalia_plugin_wasm::check_component`]), so the
 //! check and the app cannot disagree, and adds to each problem how to fix it.
 use super::install::{self, InstallError, Unpacked};
 use super::*;
@@ -115,7 +115,7 @@ fn read_folder(root: &Path) -> std::result::Result<Vec<safe_zip::File>, CheckPro
 
 /// The capabilities this Torno serves, as a manifest lists them.
 fn served() -> String {
-    craft_plugin::CAPABILITIES.iter().map(|(name, (major, minor))| format!("\"{name}@{major}.{minor}\"")).collect::<Vec<_>>().join(", ")
+    nodalia_plugin::CAPABILITIES.iter().map(|(name, (major, minor))| format!("\"{name}@{major}.{minor}\"")).collect::<Vec<_>>().join(", ")
 }
 
 /// What to change for a refusal of `field`.
@@ -156,7 +156,7 @@ fn fix_for(field: &str) -> String {
         "runtime.limits.deadline_ms" => "Set \"deadline_ms\" to at most 30000 for a command, 600000 for an importer.",
         "runtime.limits.stack_kib" => "Set \"stack_kib\" to 64..65536; a command may ask for at most 1024.",
         "capabilities" => "",
-        "component" => "Build the component for this app's WIT (crates/craft-plugin/wit/plugin.wit) and wrap it with `wasm-tools component new`.",
+        "component" => "Build the component for this app's WIT (crates/nodalia-plugin/wit/plugin.wit) and wrap it with `wasm-tools component new`.",
         "package" => {
             "Ship one plugin: plugin.json and its component, at the top of the .zip or in its one folder, with plain relative paths and no links."
         }
@@ -192,7 +192,7 @@ fn host_problem(e: &HostError) -> CheckProblem {
             "capabilities",
             reason.clone(),
             format!(
-                "Rebuild the plugin against this Torno's {API} WIT (crates/craft-plugin/wit/plugin.wit) and list the capabilities it serves: {}.",
+                "Rebuild the plugin against this Torno's {API} WIT (crates/nodalia-plugin/wit/plugin.wit) and list the capabilities it serves: {}.",
                 served()
             ),
         ),
@@ -238,10 +238,10 @@ fn component_fix(reason: &str) -> String {
     }
     if reason.contains("import") {
         return format!(
-            "Import only the interfaces of the plugin's world, from {API}: world command-plugin for a command plugin, world importer-plugin for an importer. Generate the bindings from this Torno's crates/craft-plugin/wit/plugin.wit."
+            "Import only the interfaces of the plugin's world, from {API}: world command-plugin for a command plugin, world importer-plugin for an importer. Generate the bindings from this Torno's crates/nodalia-plugin/wit/plugin.wit."
         );
     }
-    "Export the world's interface: `entry` for a command plugin (world command-plugin), `importer` for an importer (world importer-plugin), generated from crates/craft-plugin/wit/plugin.wit.".into()
+    "Export the world's interface: `entry` for a command plugin (world command-plugin), `importer` for an importer (world importer-plugin), generated from crates/nodalia-plugin/wit/plugin.wit.".into()
 }
 
 /// The problem an [`InstallError`] stands for.
@@ -326,7 +326,7 @@ pub fn check(session: &Session, path: &str) -> CheckResult {
     }
     #[cfg(all(feature = "plugins", any(target_arch = "x86_64", target_arch = "aarch64")))]
     if let Some(module) = package.files.iter().find(|f| f.path == runtime.module)
-        && let Err(e) = craft_plugin_wasm::check_component(manifest, &module.bytes)
+        && let Err(e) = nodalia_plugin_wasm::check_component(manifest, &module.bytes)
     {
         result.problems.push(host_problem(&e));
     }

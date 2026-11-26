@@ -152,13 +152,13 @@ An installed plugin should be usable from the assistant chat and over MCP withou
 
 [RFC 0001](0001-craft-bridge.md) hands work between Craft apps. Plugins should not need a second implementation per app either, so the host is built once and each app supplies its own commands.
 
-1. **App-agnostic core crate `craft-plugin`.** No CAD and no Torno knowledge. It owns the manifest, permissions, limits (fuel, memory, no network), install and signing, and the headless test harness. The app implements one trait: its command catalog as schemas, plus "run this command". Torno implements it with the MCP engine command surface. PCBCraft and other Craft apps implement their own.
+1. **App-agnostic core crate `nodalia-plugin`.** No CAD and no Torno knowledge. It owns the manifest, permissions, limits (fuel, memory, no network), install and signing, and the headless test harness. The app implements one trait: its command catalog as schemas, plus "run this command". Torno implements it with the MCP engine command surface. PCBCraft and other Craft apps implement their own.
 2. **Declarative UI contributions.** A plugin declares entries, placed in named slots (menu or ribbon), and inputs as schemas. The app draws them through the [#15100](https://github.com/tangency-labs/solidcraft/issues/15100) forms. A plugin ships no UI code, and each app decides which slots exist.
-3. **Runtimes are sub-crates on the same trait.** `craft-plugin-wasm` is wasmtime on desktop and jco on the web, and it is the runtime. A `craft-plugin-script` crate (Monty or Rhai) is optional, is not part of phase 1, and is not added unless the owner decides to revisit decision 2.
+3. **Runtimes are sub-crates on the same trait.** `nodalia-plugin-wasm` is wasmtime on desktop and jco on the web, and it is the runtime. A `nodalia-plugin-script` crate (Monty or Rhai) is optional, is not part of phase 1, and is not added unless the owner decides to revisit decision 2.
 4. **The WIT world is generic:** run a command, log, progress, cancel, granted files. App commands are data (schemas), not WIT types, so one WIT serves every Craft app. The `craft:plugin@0.1.0` world in section 2 becomes this generic world, with Torno's commands as its catalog.
-5. **Location.** The crates start in this repository as `crates/craft-plugin*`, and `cargo xtask layers` forbids any dependency on Torno crates. They move to their own repository, as solidcore did, when a second app needs them.
+5. **Location.** The crates start in this repository as `crates/nodalia-plugin*`, and `cargo xtask layers` forbids any dependency on Torno crates. They move to their own repository, as solidcore did, when a second app needs them.
 
-Phase 1 therefore builds the host as `craft-plugin` plus `craft-plugin-wasm` against that trait, not hard-coded to Torno.
+Phase 1 therefore builds the host as `nodalia-plugin` plus `nodalia-plugin-wasm` against that trait, not hard-coded to Torno.
 
 ## 7. What exists today
 

@@ -1,17 +1,17 @@
-//! Plugins built against `craft:plugin@0.1.0` (the frozen `craft-plugin/wit-0.1`), run unchanged.
+//! Plugins built against `craft:plugin@0.1.0` (the frozen `nodalia-plugin/wit-0.1`), run unchanged.
 //! 0.1 has no `plugin-error.unsupported`; every host call here is the current one, with its
 //! types converted, so the two versions can't drift apart in what they allow.
 use super::{State, control, design, evaluate, files, host_error, log, source};
-use craft_plugin::{HostError, PluginHost};
+use nodalia_plugin::{HostError, PluginHost};
 use wasmtime::component::{Component, HasSelf, Linker};
 use wasmtime::{Engine, Store};
 
 mod bindings {
-    wasmtime::component::bindgen!({ path: "../craft-plugin/wit-0.1", world: "command-plugin" });
+    wasmtime::component::bindgen!({ path: "../nodalia-plugin/wit-0.1", world: "command-plugin" });
 }
 mod importer_bindings {
     wasmtime::component::bindgen!({
-        path: "../craft-plugin/wit-0.1",
+        path: "../nodalia-plugin/wit-0.1",
         world: "importer-plugin",
         with: {
             "craft:plugin/types": super::bindings::craft::plugin::types,

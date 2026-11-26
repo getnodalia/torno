@@ -16,8 +16,8 @@ repository = "https://github.com/getnodalia/torno"
 [workspace.dependencies]
 robust = "1.2"
 # internal
-craft-plugin = { path = "crates/craft-plugin" }
-craft-plugin-wasm = { path = "crates/craft-plugin-wasm" }
+nodalia-plugin = { path = "crates/nodalia-plugin" }
+nodalia-plugin-wasm = { path = "crates/nodalia-plugin-wasm" }
 torno-geom = { path = "crates/geom" }
 torno-profile = { path = "crates/profile" }
 torno-sketch = { path = "crates/sketch" }
