@@ -48,6 +48,10 @@ pub const TABLE: &[(&str, Class)] = &[
     ("derive", Class::Standalone),
     // the 3Dconnexion driver's client API on macOS (no workspace dependencies)
     ("3dx-client", Class::Standalone),
+    // Nodalia's own B-rep kernel, written from scratch: numerics, exact predicates, curves, surfaces,
+    // topology, validity, constructors, mass properties, tessellation. std only. Experimental: nothing
+    // in Torno uses it yet (docs/brep-roadmap.md).
+    ("nodalia-brep", Class::Standalone),
     // the profiler: timed spans for every layer, the kernel's calls to commands (no workspace dependencies)
     ("profile", Class::Standalone),
     ("sketch", Class::Layer(1)),

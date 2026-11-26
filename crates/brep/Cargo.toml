@@ -1,0 +1,12 @@
+[package]
+name = "nodalia-brep"
+description = "Nodalia's own B-rep kernel, written from scratch in pure Rust: numerics, exact predicates, curves, surfaces, topology, validity, constructors, mass properties and tessellation (experimental)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+# No dependencies on purpose: std only (see README.md, "Rules").
+[dependencies]
