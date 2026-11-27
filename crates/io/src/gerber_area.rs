@@ -3,20 +3,20 @@
 //!
 //! The reader (`gerber.rs`) turns the file into ordered objects: flashed apertures, drawn
 //! strokes and regions, each dark or clear. Each object becomes closed polylines with arc
-//! segments (the `cavalier_contours` crate, MIT OR Apache-2.0), which are added to or cut from
+//! segments (`nodalia-pline`), which are added to or cut from
 //! the image in file order. The result is a set of islands, each an outer contour with holes; an
 //! island can sit inside another island's hole, so the contours nest and alternate between
 //! material and hole.
 
 use std::collections::HashMap;
 
-use cavalier_contours::polyline::{BooleanOp, BooleanResultInfo, PlineSource, PlineSourceMut, Polyline};
+use nodalia_pline::{BooleanInfo, BooleanOp, Pline as Polyline};
 use solidcore_record::Vec2;
 use torno_geom::prelude::*;
 
 use crate::Geom2;
 
-pub(crate) type Pline = Polyline<f64>;
+pub(crate) type Pline = Polyline;
 
 const TAU: f64 = std::f64::consts::TAU;
 /// Most primitives one aperture macro may have.
@@ -155,14 +155,14 @@ impl Area {
                 continue;
             }
             let r = island.outer.boolean(p, BooleanOp::Not);
-            match r.result_info {
-                BooleanResultInfo::Disjoint => out.push(island),
-                BooleanResultInfo::InvalidInput => {
+            match r.info {
+                BooleanInfo::Disjoint => out.push(island),
+                BooleanInfo::InvalidInput => {
                     self.failed += 1;
                     out.push(island);
                 }
-                BooleanResultInfo::Pline1InsidePline2 | BooleanResultInfo::Overlapping => {}
-                BooleanResultInfo::Pline2InsidePline1 => {
+                BooleanInfo::Pline1InsidePline2 | BooleanInfo::Overlapping => {}
+                BooleanInfo::Pline2InsidePline1 => {
                     if in_a_hole(&island, p) {
                         out.push(island);
                         continue;
@@ -172,12 +172,10 @@ impl Area {
                     let mut holes = Vec::new();
                     for h in island.holes {
                         let u = h.boolean(&hole, BooleanOp::Or);
-                        match u.result_info {
-                            BooleanResultInfo::Disjoint | BooleanResultInfo::InvalidInput => holes.push(h),
+                        match u.info {
+                            BooleanInfo::Disjoint | BooleanInfo::InvalidInput => holes.push(h),
                             _ => {
-                                if let Some(joined) =
-                                    u.pos_plines.into_iter().map(|q| q.pline).max_by(|x, y| x.area().abs().total_cmp(&y.area().abs()))
-                                {
+                                if let Some(joined) = u.pos.into_iter().max_by(|x, y| x.area().abs().total_cmp(&y.area().abs())) {
                                     hole = joined;
                                 }
                             }
@@ -186,8 +184,8 @@ impl Area {
                     holes.push(hole);
                     out.extend(Island::new(island.outer, holes));
                 }
-                BooleanResultInfo::Intersected => {
-                    let mut pieces: Vec<Island> = r.pos_plines.into_iter().filter_map(|q| Island::new(q.pline, Vec::new())).collect();
+                BooleanInfo::Intersected => {
+                    let mut pieces: Vec<Island> = r.pos.into_iter().filter_map(|q| Island::new(q, Vec::new())).collect();
                     // Holes the cut reaches open onto the outside; the others stay holes of the
                     // piece they are in.
                     let (open, closed): (Vec<Pline>, Vec<Pline>) = island.holes.into_iter().partition(|h| touches(h, p));
@@ -195,8 +193,8 @@ impl Area {
                         pieces = pieces.into_iter().flat_map(|piece| self.less(piece, h)).collect();
                     }
                     for h in closed {
-                        let at = h.at(0).pos();
-                        if let Some(piece) = pieces.iter_mut().find(|q| q.outer.winding_number(at) != 0) {
+                        let Some(at) = h.at(0) else { continue };
+                        if let Some(piece) = pieces.iter_mut().find(|q| q.outer.winding_number(at.x, at.y) != 0) {
                             piece.holes.push(h);
                         }
                     }
@@ -210,19 +208,19 @@ impl Area {
     /// An island with no holes less a contour.
     fn less(&mut self, piece: Island, h: &Pline) -> Vec<Island> {
         let r = piece.outer.boolean(h, BooleanOp::Not);
-        match r.result_info {
-            BooleanResultInfo::Disjoint => vec![piece],
-            BooleanResultInfo::InvalidInput => {
+        match r.info {
+            BooleanInfo::Disjoint => vec![piece],
+            BooleanInfo::InvalidInput => {
                 self.failed += 1;
                 vec![piece]
             }
-            BooleanResultInfo::Pline1InsidePline2 | BooleanResultInfo::Overlapping => Vec::new(),
-            BooleanResultInfo::Pline2InsidePline1 => {
+            BooleanInfo::Pline1InsidePline2 | BooleanInfo::Overlapping => Vec::new(),
+            BooleanInfo::Pline2InsidePline1 => {
                 let mut piece = piece;
                 piece.holes.push(h.clone());
                 vec![piece]
             }
-            BooleanResultInfo::Intersected => r.pos_plines.into_iter().filter_map(|q| Island::new(q.pline, Vec::new())).collect(),
+            BooleanInfo::Intersected => r.pos.into_iter().filter_map(|q| Island::new(q, Vec::new())).collect(),
         }
     }
 
@@ -245,26 +243,26 @@ impl Area {
 /// The union of two islands, or `None` when they stay apart.
 fn merge(a: &Island, b: &Island, failed: &mut usize) -> Option<Island> {
     let r = a.outer.boolean(&b.outer, BooleanOp::Or);
-    let (outer, mut holes) = match r.result_info {
-        BooleanResultInfo::Disjoint => return None,
-        BooleanResultInfo::InvalidInput => {
+    let (outer, mut holes) = match r.info {
+        BooleanInfo::Disjoint => return None,
+        BooleanInfo::InvalidInput => {
             *failed += 1;
             return None;
         }
         // One island inside the other's outer contour: inside one of its holes, it stays
         // its own island.
-        BooleanResultInfo::Pline2InsidePline1 if in_a_hole(a, &b.outer) => return None,
-        BooleanResultInfo::Pline1InsidePline2 if in_a_hole(b, &a.outer) => return None,
-        BooleanResultInfo::Pline2InsidePline1 | BooleanResultInfo::Overlapping => (a.outer.clone(), Vec::new()),
-        BooleanResultInfo::Pline1InsidePline2 => (b.outer.clone(), Vec::new()),
-        BooleanResultInfo::Intersected => {
-            let mut pos = r.pos_plines.into_iter().map(|p| p.pline);
+        BooleanInfo::Pline2InsidePline1 if in_a_hole(a, &b.outer) => return None,
+        BooleanInfo::Pline1InsidePline2 if in_a_hole(b, &a.outer) => return None,
+        BooleanInfo::Pline2InsidePline1 | BooleanInfo::Overlapping => (a.outer.clone(), Vec::new()),
+        BooleanInfo::Pline1InsidePline2 => (b.outer.clone(), Vec::new()),
+        BooleanInfo::Intersected => {
+            let mut pos = r.pos.into_iter();
             let outer = pos.next()?;
             if pos.next().is_some() {
                 *failed += 1;
                 return None;
             }
-            (outer, r.neg_plines.into_iter().map(|p| p.pline).collect())
+            (outer, r.neg.into_iter().collect())
         }
     };
     // What stays empty: a hole of one less the other's material, and where both have holes.
@@ -276,7 +274,7 @@ fn merge(a: &Island, b: &Island, failed: &mut usize) -> Option<Island> {
     for ha in &a.holes {
         for hb in &b.holes {
             if plines_overlap(ha, hb) {
-                holes.extend(ha.boolean(hb, BooleanOp::And).pos_plines.into_iter().map(|p| p.pline));
+                holes.extend(ha.boolean(hb, BooleanOp::And).pos);
             }
         }
     }
@@ -286,19 +284,13 @@ fn merge(a: &Island, b: &Island, failed: &mut usize) -> Option<Island> {
 
 /// Whether `p` lies inside one of the island's holes.
 fn in_a_hole(island: &Island, p: &Pline) -> bool {
-    island
-        .holes
-        .iter()
-        .any(|h| matches!(h.boolean(p, BooleanOp::Or).result_info, BooleanResultInfo::Pline2InsidePline1 | BooleanResultInfo::Overlapping))
+    island.holes.iter().any(|h| matches!(h.boolean(p, BooleanOp::Or).info, BooleanInfo::Pline2InsidePline1 | BooleanInfo::Overlapping))
 }
 
 /// Whether `b` reaches into `a` (crosses it or covers it).
 fn touches(a: &Pline, b: &Pline) -> bool {
     plines_overlap(a, b)
-        && matches!(
-            a.boolean(b, BooleanOp::Not).result_info,
-            BooleanResultInfo::Intersected | BooleanResultInfo::Pline1InsidePline2 | BooleanResultInfo::Overlapping
-        )
+        && matches!(a.boolean(b, BooleanOp::Not).info, BooleanInfo::Intersected | BooleanInfo::Pline1InsidePline2 | BooleanInfo::Overlapping)
 }
 
 /// What is left of `a` outside `b`.
@@ -307,13 +299,13 @@ fn minus(a: &Pline, b: &Pline) -> Vec<Pline> {
         return vec![a.clone()];
     }
     let r = a.boolean(b, BooleanOp::Not);
-    match r.result_info {
-        BooleanResultInfo::Disjoint | BooleanResultInfo::InvalidInput => vec![a.clone()],
-        BooleanResultInfo::Pline1InsidePline2 | BooleanResultInfo::Overlapping => Vec::new(),
+    match r.info {
+        BooleanInfo::Disjoint | BooleanInfo::InvalidInput => vec![a.clone()],
+        BooleanInfo::Pline1InsidePline2 | BooleanInfo::Overlapping => Vec::new(),
         // `b` inside `a`: `a` with a hole, which holes cannot have; keep `a` whole (the
         // material inside is its own island already).
-        BooleanResultInfo::Pline2InsidePline1 => vec![a.clone()],
-        BooleanResultInfo::Intersected => r.pos_plines.into_iter().map(|q| q.pline).collect(),
+        BooleanInfo::Pline2InsidePline1 => vec![a.clone()],
+        BooleanInfo::Intersected => r.pos.into_iter().collect(),
     }
 }
 
@@ -596,8 +588,8 @@ fn region(segs: &[Seg]) -> Vec<Island> {
     let depth_parent: Vec<(usize, Option<usize>)> = (0..loops.len())
         .map(|i| {
             let Some(p) = loops.get(i) else { return (0, None) };
-            let at = p.at(0).pos();
-            let around: Vec<usize> = (0..i).filter(|j| loops.get(*j).is_some_and(|q| q.winding_number(at) != 0)).collect();
+            let Some(at) = p.at(0) else { return (0, None) };
+            let around: Vec<usize> = (0..i).filter(|j| loops.get(*j).is_some_and(|q| q.winding_number(at.x, at.y) != 0)).collect();
             (around.len(), around.last().copied())
         })
         .collect();
@@ -649,18 +641,17 @@ fn contour(path: &[Seg]) -> Option<Pline> {
 /// A closed polyline as sketch geometry: lines, arcs, and a circle when it is one.
 fn pline_geom(p: &Pline) -> Vec<Geom2> {
     let n = p.vertex_count();
-    if n == 2 {
-        let (a, b) = (p.at(0), p.at(1));
-        if (a.bulge - b.bulge).abs() < 1e-9 && (a.bulge.abs() - 1.0).abs() < 1e-9 {
-            let (pa, pb) = (a.pos(), b.pos());
-            let c = Vec2::new((pa.x + pb.x) / 2.0, (pa.y + pb.y) / 2.0);
-            return vec![Geom2::Circle(c, (pa.x - c.x).hypot(pa.y - c.y))];
-        }
+    if let [a, b] = p.vertices()
+        && (a.bulge - b.bulge).abs() < 1e-9
+        && (a.bulge.abs() - 1.0).abs() < 1e-9
+    {
+        let (pa, pb) = (Vec2::new(a.x, a.y), Vec2::new(b.x, b.y));
+        let c = Vec2::new((pa.x + pb.x) / 2.0, (pa.y + pb.y) / 2.0);
+        return vec![Geom2::Circle(c, (pa.x - c.x).hypot(pa.y - c.y))];
     }
     let mut out = Vec::with_capacity(n);
     for i in 0..n {
-        let v = p.at(i);
-        let w = p.at(p.next_wrapping_index(i));
+        let (Some(v), Some(w)) = (p.at(i), p.at(p.next_wrapping_index(i))) else { continue };
         let (a, b) = (Vec2::new(v.x, v.y), Vec2::new(w.x, w.y));
         if a == b {
             continue;

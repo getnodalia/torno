@@ -52,6 +52,7 @@ pub const TABLE: &[(&str, Class)] = &[
     // topology, validity, constructors, mass properties, tessellation. std only. Experimental: nothing
     // in Torno uses it yet (docs/brep-roadmap.md).
     ("nodalia-brep", Class::Standalone),
+    ("nodalia-pline", Class::Standalone),
     // the profiler: timed spans for every layer, the kernel's calls to commands (no workspace dependencies)
     ("profile", Class::Standalone),
     ("sketch", Class::Layer(1)),

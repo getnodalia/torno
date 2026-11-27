@@ -1,0 +1,12 @@
+[package]
+name = "nodalia-pline"
+description = "Nodalia's own closed polylines with arc segments: area, extents, winding, and exact-tolerance boolean operations (union, intersection, difference, exclusive or)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+# No dependencies on purpose: std only.
+[dependencies]
