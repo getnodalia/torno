@@ -1559,7 +1559,7 @@
   "help.connect_title": "AI 어시스턴트 연결",
   "help.construct.plane.axis_point": "축과 축 위에 있지 않은 점을 포함하는 구성 평면을 만듭니다. 원점 축, 구성 축, 직선 모서리 또는 스케치 직선을 선택한 다음 꼭짓점, 스케치 점 또는 구성점을 선택합니다. 축 위의 점으로는 평면을 하나로 결정할 수 없습니다.",
   "help.file.insert_gerber": "제조용 파일로 인쇄 회로 기판을 만듭니다. Gerber 기판 외곽선과 Excellon 드릴 파일이 스케치와 지정한 두께의 기판 바디가 되고, 모든 구멍과 슬롯이 관통해 뚫립니다. 실제 기판에 맞춰 케이스나 브래킷을 설계할 때 사용합니다.",
-  "help.font_details": "인터페이스는 egui의 내장 글꼴을 사용합니다(Ubuntu Font Licence 및 MIT/Bitstream Vera 라이선스의 Ubuntu Light와 Hack, OFL 및 MIT의 Noto Emoji와 이모지 아이콘 글꼴). 스케치 텍스트는 Liberation Sans(SIL OFL 1.1)를 사용합니다. The Crafting Apps의 선택적 글꼴 팩 craft-fonts(BIZ UDPGothic, Shippori Mincho, BIZ UDMincho, Noto Sans CJK SC, Noto Sans Arabic; SIL OFL 1.1)는 Torno 빌드에 포함되지 않습니다.",
+  "help.font_details": "인터페이스는 egui의 내장 글꼴을 사용합니다(Ubuntu Font Licence 및 MIT/Bitstream Vera 라이선스의 Ubuntu Light와 Hack, OFL 및 MIT의 Noto Emoji와 이모지 아이콘 글꼴). 스케치 텍스트는 Liberation Sans(SIL OFL 1.1)를 사용합니다. Nodalia의 선택적 글꼴 팩 nodalia-fonts(BIZ UDPGothic, Shippori Mincho, BIZ UDMincho, Noto Sans CJK SC, Noto Sans Arabic; SIL OFL 1.1)는 Torno 빌드에 포함되지 않습니다.",
   "help.fonts": "글꼴",
   "help.layout.apply": "저장된 레이아웃을 현재 작업 공간에 적용합니다. 유지 중인 편집기의 초안은 보존됩니다.",
   "help.layout.get": "확정된 레이아웃과 등록된 작업 공간을 확인합니다.",

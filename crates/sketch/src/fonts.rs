@@ -441,9 +441,9 @@ fn home() -> Option<PathBuf> {
 }
 
 /// The font folders named by `TORNO_FONT_DIRS` (a path list), or else by the single folder
-/// in `CRAFT_FONTS_DIR` (the craft-fonts pack).
+/// in `NODALIA_FONTS_DIR` (the nodalia-fonts pack).
 pub fn font_override_dirs() -> Vec<PathBuf> {
-    override_dirs(std::env::var_os("TORNO_FONT_DIRS"), std::env::var_os("CRAFT_FONTS_DIR"))
+    override_dirs(std::env::var_os("TORNO_FONT_DIRS"), std::env::var_os("NODALIA_FONTS_DIR"))
 }
 
 fn override_dirs(dirs: Option<std::ffi::OsString>, pack: Option<std::ffi::OsString>) -> Vec<PathBuf> {
@@ -569,7 +569,7 @@ mod tests {
         }
     }
 
-    /// `TORNO_FONT_DIRS` wins and may list several folders; `CRAFT_FONTS_DIR` is the fallback.
+    /// `TORNO_FONT_DIRS` wins and may list several folders; `NODALIA_FONTS_DIR` is the fallback.
     #[test]
     fn font_folders_from_the_environment() -> std::result::Result<(), std::env::JoinPathsError> {
         let list = std::env::join_paths(["/a", "/b"])?;

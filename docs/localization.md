@@ -146,13 +146,13 @@ widgets; UTF-8 byte lengths do not describe their displayed width.
 
 The desktop host tries system CJK fonts across Windows, macOS and Linux, the Flatpak host font
 folders (`/run/host/fonts`, `/run/host/user-fonts`), the folders listed in `TORNO_FONT_DIRS`
-and an optional `CRAFT_FONTS_DIR` font pack, and skips files that cannot be parsed. The lists of known fonts per script are in
+and an optional `NODALIA_FONTS_DIR` font pack, and skips files that cannot be parsed. The lists of known fonts per script are in
 `sketch::fonts::fallback`. Chinese uses its own fallback
 chain after the general CJK font: many Japanese CJK fonts (Hiragino Gothic, Meiryo, Yu Gothic)
 match the CJK font search but lack simplified characters, so a second fallback found by the
 Chinese font-name list (`PingFang`, `Microsoft YaHei`, `Noto Sans CJK SC`, …) covers them per
 glyph. No fonts are redistributed in native desktop distribution packages; native builds rely
-entirely on existing operating system fonts or craft-fonts.
+entirely on existing operating system fonts or nodalia-fonts.
 
 In the browser, `torno-web` ships self-hosted script fonts (SIL OFL 1.1) in the web distribution
 artifacts only, loaded asynchronously from the same origin without contacting any external CDNs or
@@ -199,7 +199,7 @@ Arabic takes the same path. Its letters join, which the shaper does from the fon
 each Arabic word is one run: the Arabic font comes after the Latin interface font, which keeps the
 spaces, digits and Latin text, and it is the first fallback for an Arabic UI (Segoe UI, Tahoma or
 Arial on Windows; SF Arabic, Geeza Pro, Damascus or Tahoma on macOS; Noto Sans or Naskh Arabic,
-KACST One or DejaVu Sans on Linux; `NotoSansArabic-Regular.ttf` in `CRAFT_FONTS_DIR`). Write Arabic
+KACST One or DejaVu Sans on Linux; `NotoSansArabic-Regular.ttf` in `NODALIA_FONTS_DIR`). Write Arabic
 messages with Western digits, which keep their left-to-right order inside the sentence.
 `arabic_messages_land_on_screen_in_display_order` checks the word order on screen.
 

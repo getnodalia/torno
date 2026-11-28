@@ -1974,7 +1974,7 @@
   "help.file.insert_step": "将 STEP、IGES、FreeCAD 或 Rhino 文件作为新组件中的实体添加到设计中；装配中的零件会成为嵌套组件。用于导入供应商或其他 CAD 程序的模型。",
   "help.file.save_mesh": "将实体保存为 STL、3MF 或 OBJ 网格，曲面的平滑程度可选。用于为 3D 打印或读取网格的程序准备零件。",
   "help.file.send_to_slicer": "将选中的实体保存为 3MF 文件，并在所选的切片软件中打开。用于一步从模型进入打印。",
-  "help.font_details": "界面使用 egui 的内置字体（Ubuntu Light 和 Hack，采用 Ubuntu Font Licence 和 MIT/Bitstream Vera 许可证；Noto Emoji 和表情图标字体，采用 OFL 和 MIT 许可证）。草图文本使用 Liberation Sans（SIL OFL 1.1）。The Crafting Apps 的可选字体包 craft-fonts（BIZ UDPGothic、Shippori Mincho、BIZ UDMincho、Noto Sans CJK SC、Noto Sans Arabic；SIL OFL 1.1）未随 Torno 构建版本捆绑提供。",
+  "help.font_details": "界面使用 egui 的内置字体（Ubuntu Light 和 Hack，采用 Ubuntu Font Licence 和 MIT/Bitstream Vera 许可证；Noto Emoji 和表情图标字体，采用 OFL 和 MIT 许可证）。草图文本使用 Liberation Sans（SIL OFL 1.1）。Nodalia 的可选字体包 nodalia-fonts（BIZ UDPGothic、Shippori Mincho、BIZ UDMincho、Noto Sans CJK SC、Noto Sans Arabic；SIL OFL 1.1）未随 Torno 构建版本捆绑提供。",
   "help.fonts": "字体",
   "help.frame.end_cap": "用符合型材外形的板封闭框架构件的开放端。用于封住管材、角钢和梁的端部，可盖在端面上或嵌入端部。",
   "help.frame.member": "沿框架草图的线放置型材（如管材或铝型材），每条线一根构件。用于构建框架、货架和焊接结构。",

@@ -1974,7 +1974,7 @@
   "help.file.insert_step": "STEP、IGES、FreeCAD、Rhino ファイルを、新しいコンポーネント内のソリッド ボディとしてデザインに追加します。アセンブリの部品は入れ子のコンポーネントになります。メーカーやほかの CAD プログラムのモデルを取り込むときに使います。",
   "help.file.save_mesh": "ボディを STL、3MF、OBJ のメッシュとして保存します。曲面のなめらかさは選択できます。3D プリント用や、メッシュを読み込むプログラム用に部品を用意するときに使います。",
   "help.file.send_to_slicer": "選択したボディを 3MF ファイルとして保存し、選んだスライサーで開きます。モデルからプリントまでを1ステップで進めるときに使います。",
-  "help.font_details": "インターフェースにはegui組み込みのフォントを使用しています（Ubuntu Font LicenceおよびMIT/Bitstream VeraライセンスのUbuntu LightとHack、OFLおよびMITのNoto Emojiと絵文字アイコンフォント）。スケッチのテキストにはLiberation Sans（SIL OFL 1.1）を使用しています。The Crafting Appsのオプションフォントパックcraft-fonts（BIZ UDPGothic、Shippori Mincho、BIZ UDMincho、Noto Sans CJK SC、Noto Sans Arabic、SIL OFL 1.1）はTornoのビルドに同梱されていません。",
+  "help.font_details": "インターフェースにはegui組み込みのフォントを使用しています（Ubuntu Font LicenceおよびMIT/Bitstream VeraライセンスのUbuntu LightとHack、OFLおよびMITのNoto Emojiと絵文字アイコンフォント）。スケッチのテキストにはLiberation Sans（SIL OFL 1.1）を使用しています。Nodaliaのオプションフォントパックnodalia-fonts（BIZ UDPGothic、Shippori Mincho、BIZ UDMincho、Noto Sans CJK SC、Noto Sans Arabic、SIL OFL 1.1）はTornoのビルドに同梱されていません。",
   "help.fonts": "フォント",
   "help.frame.end_cap": "フレーム部材の開いた端を、プロファイルの外形に沿ったプレートで閉じます。パイプ、アングル、梁の端をふさぐときに、端の上に載せるか端に埋め込んで使います。",
   "help.frame.member": "チューブやアルミ押し出し材などのプロファイルを、フレームスケッチの線に沿って1本につき1部材ずつ配置します。フレーム、ラック、溶接構造を作るときに使います。",

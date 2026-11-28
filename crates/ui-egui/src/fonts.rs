@@ -383,7 +383,7 @@ fn first_candidate(candidates: fallback::Candidates) -> Option<Vec<u8>> {
     fallback::candidate_files(candidates).find_map(|path| try_read_font(std::path::Path::new(path)))
 }
 
-/// Find a CJK fallback font on the local system or in TORNO_FONT_DIRS / CRAFT_FONTS_DIR.
+/// Find a CJK fallback font on the local system or in TORNO_FONT_DIRS / NODALIA_FONTS_DIR.
 #[cfg(not(target_arch = "wasm32"))]
 fn find_system_cjk_font() -> Option<Vec<u8>> {
     // 1. Check the font folders the user named.
@@ -649,11 +649,11 @@ fn find_chinese_font_in(dirs: &[std::path::PathBuf]) -> Option<Vec<u8>> {
     dirs.iter().find_map(|dir| scan_dir_for_font_where(dir, 3, is_chinese_font_name, draws_simplified_chinese))
 }
 
-/// The first Arabic font in `CRAFT_FONTS_DIR` (`NotoSansArabic-Regular.ttf`) or the candidate
+/// The first Arabic font in `NODALIA_FONTS_DIR` (`NotoSansArabic-Regular.ttf`) or the candidate
 /// paths that draws Arabic.
 #[cfg(not(target_arch = "wasm32"))]
 fn arabic_font() -> Option<Vec<u8>> {
-    let pack = std::env::var("CRAFT_FONTS_DIR").ok().map(|dir| std::path::PathBuf::from(dir).join("NotoSansArabic-Regular.ttf"));
+    let pack = std::env::var("NODALIA_FONTS_DIR").ok().map(|dir| std::path::PathBuf::from(dir).join("NotoSansArabic-Regular.ttf"));
     pack.into_iter()
         .chain(fallback::candidate_files(fallback::ARABIC).map(std::path::PathBuf::from))
         .find_map(|path| try_read_font(&path).filter(|bytes| covers(bytes, 'ب')))
@@ -1306,7 +1306,7 @@ mod tests {
 
     #[test]
     fn web_chinese_subset_draws_simplified_settings() {
-        let bytes = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets/fonts/craft-ui-sc/CraftUI-SC.otf")).to_vec();
+        let bytes = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets/fonts/nodalia-ui-sc/CraftUI-SC.otf")).to_vec();
         let ctx = test_context();
         assert!(install_web_script_fonts(&ctx, None, Some(bytes), None, "zh"));
         let installed = ctx.data(|d| d.get_temp::<FontDefinitions>(installed_fonts_id())).unwrap();
@@ -1333,7 +1333,7 @@ mod tests {
     /// The Korean web face leads the sans families for a Korean UI and draws Hangul (#15208).
     #[test]
     fn web_korean_subset_draws_hangul_settings() {
-        let bytes = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets/fonts/craft-ui-kr/CraftUI-KR.otf")).to_vec();
+        let bytes = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets/fonts/nodalia-ui-kr/CraftUI-KR.otf")).to_vec();
         let ctx = test_context();
         assert!(install_web_script_fonts(&ctx, None, None, Some(bytes), "ko"));
         let installed = ctx.data(|d| d.get_temp::<FontDefinitions>(installed_fonts_id())).unwrap();
@@ -1362,7 +1362,7 @@ mod tests {
     /// catalog has a glyph in it (#15208).
     #[test]
     fn the_korean_subset_covers_every_hangul_character() {
-        let bytes = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets/fonts/craft-ui-kr/CraftUI-KR.otf"));
+        let bytes = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets/fonts/nodalia-ui-kr/CraftUI-KR.otf"));
         let face = ttf_parser::Face::parse(bytes, 0).unwrap();
         for code in 0xAC00..=0xD7A3 {
             let c = char::from_u32(code).unwrap();

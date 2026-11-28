@@ -1538,12 +1538,12 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Check out craft-fonts
+      - name: Check out nodalia-fonts
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: getnodalia/foundation
-          ref: b076417b5880bd4154bd22f00695b1d28c6bea83 # vendor/craft-fonts/main
-          path: craft-fonts
+          ref: f9a5f30b74d90b69cffdb7042bb0b339400ed06d # nodalia/fonts
+          path: nodalia-fonts
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -1577,7 +1577,7 @@ jobs:
           PKG_CONFIG_ALLOW_CROSS: 1
         run: |
           . "$HOME/.cargo/env"
-          export CRAFT_FONTS_DIR="$PWD/craft-fonts"
+          export NODALIA_FONTS_DIR="$PWD/nodalia-fonts"
           cargo check --all-targets --locked --target riscv64gc-unknown-linux-gnu
 
   # Nobody watches the nightly run, and it failed every day from 2026-10-16 to 2026-10-28 before
